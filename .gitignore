@@ -16,3 +16,5 @@ kernel
 kernelmemfs
 mkfs
 .gdbinit
+armxv6.bin
+a.out
