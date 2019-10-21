@@ -29,7 +29,7 @@ OBJS = \
 	kobj/vm.o\
 
 ifndef TOOLPREFIX
-TOOLPREFIX := arm-linux-gnueabihf-
+TOOLPREFIX := arm-none-eabi-
 endif
 ifndef QEMU
 QEMU = qemu-system-arm
