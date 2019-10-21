@@ -1,0 +1,4 @@
+rule tool_compile
+  command = gcc -Werror -Wall -iquote ../ $in -o $out
+
+build tools/mkfs: tool_compile tools/mkfs.c
