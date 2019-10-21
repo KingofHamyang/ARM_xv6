@@ -1,0 +1,3 @@
+
+build $builddir/main.o: c_compile kernel/main.c
+build $builddir/bootasm.o: as_compile kernel/bootasm.S

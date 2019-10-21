@@ -13,8 +13,13 @@ entryother
 initcode
 initcode.out
 kernel
+!kernel/
 kernelmemfs
 mkfs
 .gdbinit
 armxv6.bin
 a.out
+.vscode/
+out/
+tools/mkfs
+ulib/usys.S

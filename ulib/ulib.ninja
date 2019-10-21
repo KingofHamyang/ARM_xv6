@@ -1,0 +1,2 @@
+rule perl_compile
+  command = perl $in > $out

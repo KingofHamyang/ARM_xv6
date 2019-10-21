@@ -1,0 +1,47 @@
+ninja_required_version = 1.3
+builddir = out
+
+toolchain = arm-none-eabi-
+qemu = qemu-system-arm
+qemuopts = -M versatilepb -m 256 -cpu cortex-a9 -nographic
+
+cc = ${toolchain}gcc
+as = ${toolchain}as
+ld = arm-none-eabi-ld
+objcopy = arm-none-eabi-objcopy
+objdump = arm-none-eabi-objdump
+
+cflags = -fno-pic -static -fno-builtin -fno-strict-aliasing -O0 -Wall -ggdb -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
+asflags = -gdwarf-2 -Wa -I./include
+ldflags = -m armelf -Ttext 0x100000
+
+libgcc = cc -print-libgcc-file-name
+
+rule c_compile
+  command = $cc $cflags -c $in -o $out
+
+rule as_compile
+  command = $as $asflags -c $in -o $out
+
+rule link
+  command = $ld $ldflags $in -o $out
+
+rule dump
+  command = $objdump -S $in > $out
+
+rule _qemu
+  command = $qemu $qemuopts $extra -kernel $in
+
+include kernel/kernel.ninja
+include ulib/ulib.ninja
+include tools/tools.ninja
+include user/user.ninja
+
+build $builddir/kernel.elf: link $builddir/main.o $builddir/bootasm.o
+build $builddir/kernel.asm: dump $builddir/kernel.elf | $builddir/kernel.elf
+
+build qemu: _qemu $builddir/kernel.elf
+build qemu-gdb: _qemu $builddir/kernel.elf
+  extra = -gdb tcp::12345 -S 
+
+default $builddir/kernel.asm

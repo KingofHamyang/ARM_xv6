@@ -1,0 +1,16 @@
+rule user_link
+  command = $ld $ldflags -N -e main -Ttext 0 -o $out $in -L$builddir $libgcc
+
+rule forktest_link
+  command = $ld $ldflags -N -e main -Ttext 0 -o $out $in $builddir/ulib.o $builddir/usys.o && $objdump -S $builddir/_forktest > $builddir/forktest.asm
+
+rule mkfs_img
+  command = ./tools/mkfs $out $in && $objdump -S usys.o > usys.asm
+
+# If you want to add your user program, add line like this.
+# build $builddir/[your_program].o: c_compile user/[your_program].c
+# build $builddir/_[your_program]: user_link $builddir/[your_program].o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
+
+# Also, don't forget insert your program into fs.img!
+
+build $builddir/fs.img: mkfs_img | tools/mkfs
