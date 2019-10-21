@@ -216,7 +216,7 @@ x86 플랫폼으로 작성된 xv6 코드를 이해함과 동시에 ARM에서는 
 
 ```
 $ sudo apt update
-$ sudo apt install gdb-multiarch gcc-arm-linux-gnueabihf qemu
+$ sudo apt install gdb-multiarch gcc-arm-none-eabi qemu
 ```
 
 설치가 완료되고 나면, 간단한 ARM Assembly로 된 Toy 프로그램을 작성해보자. (`add.S`)
@@ -236,16 +236,16 @@ stop:   b stop
 
 ```
 $ dd if=/dev/zero of=flash.bin bs=4096 count=4096
-$ arm-linux-gnueabihf-as -o add.o add.S
-$ arm-linux-gnueabihf-ld -Ttext 0x0 -o add.elf add.o
-$ arm-linux-gnueabihf-objcopy -O binary add.elf add.bin
+$ arm-none-eabi-as -o add.o add.S
+$ arm-none-eabi-ld -Ttext 0x0 -o add.elf add.o
+$ arm-none-eabi-objcopy -O binary add.elf add.bin
 $ dd if=add.bin of=flash.bin bs=4096 conv=notrunc
 ```
 
 1. `dd`를 통해 부팅할 flash 파일을 만든다. 기본 블록사이즈는 4096, count 역시 4096으로 설정해 16MB정도 크기로 만들어주었다.
-2. ARM 툴체인 중 `arm-linux-gnueabihf-as` 으로 어셈블리 파일을 object 파일로 변환한다.
-3. `arm-linux-gnueabihf-ld` 로 출력된 object 파일을 링커로 변환하여 elf 파일로 변환한다. `-Ttext`옵션은 `.text` 섹션만 추출해서 0x0번지에 저장하는 역할을 해준다.
-4. 하지만 우리가 만든 elf 파일은 바이너리가 들어있긴 하지만 ELF 포맷이 되어 있기 때문에 직접 부팅할 수 없다. 이를 벗겨내고 실행 부분만 만들기 위해서 `arm-linux-gnueabihf-objcopy` 를 사용한다.
+2. ARM 툴체인 중 `arm-none-eabi-as` 으로 어셈블리 파일을 object 파일로 변환한다.
+3. `arm-none-eabi-ld` 로 출력된 object 파일을 링커로 변환하여 elf 파일로 변환한다. `-Ttext`옵션은 `.text` 섹션만 추출해서 0x0번지에 저장하는 역할을 해준다.
+4. 하지만 우리가 만든 elf 파일은 바이너리가 들어있긴 하지만 ELF 포맷이 되어 있기 때문에 직접 부팅할 수 없다. 이를 벗겨내고 실행 부분만 만들기 위해서 `arm-none-eabi-objcopy` 를 사용한다.
 5. 마지막으로, 우리가 최종적으로 만든 실행 파일인 add.bin을 flash.bin에 덮어씌우자. 플래시 메모리를 타겟으로 하므로 기본 블록사이즈는 4096으로, 옵션으로 `conv=notrunc` 를 추가하면 파일 위에 덮어씌우게 된다.
 
 마지막으로, QEMU를 실행해서 실제 에뮬레이션 보드에 올려보아 부팅이 되는지 확인해보자.

@@ -29,7 +29,7 @@ OBJS = \
 	kobj/vm.o\
 
 ifndef TOOLPREFIX
-TOOLPREFIX := arm-linux-gnueabihf-
+TOOLPREFIX := arm-none-eabi-
 endif
 ifndef QEMU
 QEMU = qemu-system-arm
@@ -229,7 +229,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
 qemu-arm-nox-gdb: armxv6.bin
 	@echo "Xv6 for Armv7 is running with GDB" 1>&2
-	$(ARMQEMU) -M connex -cpu cortex-a9 -nographic -pflash out/armxv6.bin -gdb tcp::12345 -S 
+	$(ARMQEMU) -M versatilepb -cpu cortex-a9 -nographic -pflash out/armxv6.bin -gdb tcp::12345 -S 
 
 # CUT HERE
 # prepare dist for students
