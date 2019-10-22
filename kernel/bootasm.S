@@ -21,10 +21,10 @@ _start:
 	b .
 
 jump_stack:
-/*
 	mov r0, sp
 	add r0, r0, #KERNBASE
 	mov sp, r0
-*/
+/*
 	add sp, sp, #KERNBASE
+*/
 	mov pc, lr

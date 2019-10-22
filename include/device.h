@@ -13,9 +13,9 @@
 #define VEC_TBL         0xFFFF0000
 
 
-#define STACK_FILL      0xdeadbeef
+#define STACK_FILL      0x8BADF00D
 
-#define UART0           0x101f1000
+#define UART0           0x101F1000
 #define UART_CLK        24000000    // Clock rate for UART
 
 #define TIMER0          0x101E2000

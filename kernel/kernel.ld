@@ -34,11 +34,11 @@ SECTIONS
 
 		/* Kernel page table. 16K */
 		. = ALIGN(0x4000);
-		PROVIDE(kern_table = .);
+		PROVIDE(_kt = .);
 		. += 0x4000;
 
 		/* User page table. 4K */
-		PROVIDE(user_table = .);
+		PROVIDE(_ut = .);
 		. += 0x1000;
 
 		/* initialization end checkpoint. */
