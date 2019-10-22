@@ -1,68 +1,72 @@
-/* Simple linker script for the JOS kernel.
-   See the GNU ld 'info' manual ("info ld") to learn the syntax. */
-
-OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
-OUTPUT_ARCH(i386)
+OUTPUT_FORMAT("elf32-littlearm")
+OUTPUT_ARCH(arm)
 ENTRY(_start)
+
+BOOT_STACK_SIZE = 0x1000;
 
 SECTIONS
 {
-	/* Link the kernel at this address: "." means the current address */
-        /* Must be equal to KERNLINK */
-	. = 0x80100000;
+	/* Start point. */
+	. = 0x10000;
+	.start_sec : {
+		/* read only area. */
+		out/bootasm.o(.text)
+		out/bootmain.o(.text .text.*)
 
-	.text : AT(0x100000) {
-		*(.text .stub .text.* .gnu.linkonce.t.*)
+		out/bootasm.o(.rodata .rodata.*)
+		out/bootmain.o(.rodata .rodata.*)
+
+		/* already initialized to zero. */
+		out/bootasm.o(.data .data.*)
+		out/bootmain.o(.data .data.*)
+
+		/* initialization start checkpoint. */
+		PROVIDE(boot_start_addr = .);
+
+		out/bootasm.o(.bss .bss.* COMMON)
+		out/bootmain.o(.bss .bss.* COMMON)
+		
+		/* stack for booting code. */
+		. = ALIGN(0x1000);
+		. += BOOT_STACK_SIZE;
+
+		PROVIDE(svc_stack = .);
+
+		/* Kernel page table. 16K */
+		. = ALIGN(0x4000);
+		PROVIDE(_kt = .);
+		. += 0x4000;
+
+		/* User page table. 4K */
+		PROVIDE(_ut = .);
+		. += 0x1000;
+
+		/* initialization end checkpoint. */
+		PROVIDE(boot_end_addr = .);
 	}
 
-	PROVIDE(etext = .);	/* Define the 'etext' symbol to this value */
-
-	.rodata : {
-		*(.rodata .rodata.* .gnu.linkonce.r.*)
+	/* Other Kernel code is placed over 0x80000000 + 128KB. */
+	. = 0x80020000;
+	.text : AT(0x20000) {
+		*(.text .text.* .gnu.linkonce.t.*)
 	}
 
-	/* Include debugging information in kernel memory */
-	.stab : {
-		PROVIDE(__STAB_BEGIN__ = .);
-		*(.stab);
-		PROVIDE(__STAB_END__ = .);
-		BYTE(0)		/* Force the linker to allocate space
-				   for this section */
-	}
+	/* Other Kernel code text checkpoint. */
+	PROVIDE(kern_text = .);
 
-	.stabstr : {
-		PROVIDE(__STABSTR_BEGIN__ = .);
-		*(.stabstr);
-		PROVIDE(__STABSTR_END__ = .);
-		BYTE(0)		/* Force the linker to allocate space
-				   for this section */
-	}
-
-	/* Adjust the address for the data segment to the next page */
 	. = ALIGN(0x1000);
+	PROVIDE(kern_data_start = .);
 
-	/* Conventionally, Unix linkers provide pseudo-symbols
-	 * etext, edata, and end, at the end of the text, data, and bss.
-	 * For the kernel mapping, we need the address at the beginning
-	 * of the data section, but that's not one of the conventional
-	 * symbols, because the convention started before there was a
-	 * read-only rodata section between text and data. */
-	PROVIDE(data = .);
-
-	/* The data segment */
 	.data : {
-		*(.data)
+		*(.data .data.*)
 	}
 
-	PROVIDE(edata = .);
+	PROVIDE(kern_data_end = .);
 
 	.bss : {
-		*(.bss)
+		*(.bss .bss.* COMMON)
 	}
 
-	PROVIDE(end = .);
-
-	/DISCARD/ : {
-		*(.eh_frame .note.GNU-stack)
-	}
+	. = ALIGN(0x1000);
+	PROVIDE(kern_end = .);
 }

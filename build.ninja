@@ -13,7 +13,7 @@ objdump = arm-none-eabi-objdump
 
 cflags = -fno-pic -static -fno-builtin -fno-strict-aliasing -O0 -Wall -ggdb -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
 asflags = -gdwarf-2 -Wa -I./include
-ldflags = -m armelf -Ttext 0x100000
+ldflags = -m armelf -T kernel/kernel.ld
 
 libgcc = cc -print-libgcc-file-name
 
@@ -21,7 +21,7 @@ rule c_compile
   command = $cc $cflags -c $in -o $out
 
 rule as_compile
-  command = $as $asflags -c $in -o $out
+  command = $cc $cflags -c $in -o $out
 
 rule link
   command = $ld $ldflags $in -o $out
@@ -31,17 +31,21 @@ rule dump
 
 rule _qemu
   command = $qemu $qemuopts $extra -kernel $in
+  pool = console
+
+rule show_dep_graph
+  command = ninja -t graph $in | dot -Tpng -o$out
 
 include kernel/kernel.ninja
 include ulib/ulib.ninja
 include tools/tools.ninja
 include user/user.ninja
 
-build $builddir/kernel.elf: link $builddir/main.o $builddir/bootasm.o
-build $builddir/kernel.asm: dump $builddir/kernel.elf | $builddir/kernel.elf
-
-build qemu: _qemu $builddir/kernel.elf
-build qemu-gdb: _qemu $builddir/kernel.elf
+build qemu: _qemu $builddir/kernel.elf | $builddir/kernel.asm
+build qemu-gdb: _qemu $builddir/kernel.elf | $builddir/kernel.asm
   extra = -gdb tcp::12345 -S 
+  
+# You need to install graphviz to export build dependency graph.
+build graph.png: show_dep_graph $builddir/kernel.asm
 
 default $builddir/kernel.asm
