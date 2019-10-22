@@ -3,7 +3,6 @@
 
 extern void *end;
 
-struct cpu cpus[NCPU];
 struct cpu *cpu;
 
 int main (void) {

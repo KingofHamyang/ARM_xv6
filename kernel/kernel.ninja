@@ -1,3 +1,7 @@
 
 build $builddir/main.o: c_compile kernel/main.c
 build $builddir/bootasm.o: as_compile kernel/bootasm.S
+build $builddir/bootmain.o: c_compile kernel/bootmain.c
+
+build $builddir/kernel.elf: link $builddir/main.o $builddir/bootasm.o $builddir/bootmain.o 
+build $builddir/kernel.asm: dump $builddir/kernel.elf | $builddir/kernel.elf
