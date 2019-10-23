@@ -11,11 +11,12 @@ ld = arm-none-eabi-ld
 objcopy = arm-none-eabi-objcopy
 objdump = arm-none-eabi-objdump
 
-cflags = -fno-pic -static -fno-builtin -fno-strict-aliasing -O0 -Wall -ggdb -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
+cflags = -mfloat-abi=soft -fno-pic -static -fno-builtin -fno-strict-aliasing -O0 -Wall -ggdb -Wno-unused -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
 asflags = -gdwarf-2 -Wa -I./include
-ldflags = -m armelf -T kernel/kernel.ld
+user_ldflags = -N -Ttext 0
+libgcc = /usr/lib/gcc/arm-none-eabi/9.2.0/libgcc.a
+ldflags = 
 
-libgcc = cc -print-libgcc-file-name
 
 rule c_compile
   command = $cc $cflags -c $in -o $out
@@ -23,8 +24,11 @@ rule c_compile
 rule as_compile
   command = $cc $cflags -c $in -o $out
 
-rule link
-  command = $ld $ldflags $in -o $out
+rule cc_link
+  command = $cc $ldflags $in $builddir/initcode $builddir/fs.img -o $out
+
+rule ld_link
+  command = $ld -m armelf -T kernel/kernel.ld -L$libgcc -L$builddir $in -o $out -b binary $builddir/initcode $builddir/fs.img
 
 rule dump
   command = $objdump -S $in > $out
@@ -36,10 +40,10 @@ rule _qemu
 rule show_dep_graph
   command = ninja -t graph $in | dot -Tpng -o$out
 
-include kernel/kernel.ninja
-include ulib/ulib.ninja
 include tools/tools.ninja
+include ulib/ulib.ninja
 include user/user.ninja
+include kernel/kernel.ninja
 
 build qemu: _qemu $builddir/kernel.elf | $builddir/kernel.asm
 build qemu-gdb: _qemu $builddir/kernel.elf | $builddir/kernel.asm

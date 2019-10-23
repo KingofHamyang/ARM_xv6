@@ -1,8 +1,7 @@
 #include "types.h"
 #include "arm.h"
 
-void* memset(void *dst, int v, int n)
-{
+void* memset(void *dst, int v, uint n) {
     uint8	*p;
     uint8	c;
     uint32	val;
@@ -13,7 +12,7 @@ void* memset(void *dst, int v, int n)
     val = (c << 24) | (c << 16) | (c << 8) | c;
 
     // set bytes before whole uint32
-    for (; (n > 0) && ((uint)p % 4); n--, p++){
+    for (; (n > 0) && ((uint)p % 4); n--, p++) {
         *p = c;
     }
 
@@ -42,8 +41,8 @@ int memcmp(const void *v1, const void *v2, uint n)
     s1 = v1;
     s2 = v2;
 
-    while(n-- > 0){
-        if(*s1 != *s2) {
+    while (n-- > 0) {
+        if (*s1 != *s2) {
             return *s1 - *s2;
         }
 
@@ -61,16 +60,16 @@ void* memmove(void *dst, const void *src, uint n)
     s = src;
     d = dst;
 
-    if(s < d && s + n > d){
+    if (s < d && s + n > d) {
         s += n;
         d += n;
 
-        while(n-- > 0) {
+        while (n-- > 0) {
             *--d = *--s;
         }
 
     } else {
-        while(n-- > 0) {
+        while (n-- > 0) {
             *d++ = *s++;
         }
     }
@@ -86,11 +85,11 @@ void* memcpy(void *dst, const void *src, uint n)
 
 int strncmp(const char *p, const char *q, uint n)
 {
-    while(n > 0 && *p && *p == *q) {
+    while (n > 0 && *p && *p == *q) {
         n--, p++, q++;
     }
 
-    if(n == 0) {
+    if (n == 0) {
         return 0;
     }
 
@@ -103,10 +102,10 @@ char* strncpy(char *s, const char *t, int n)
 
     os = s;
 
-    while(n-- > 0 && (*s++ = *t++) != 0)
+    while (n-- > 0 && (*s++ = *t++) != 0)
         ;
 
-    while(n-- > 0) {
+    while (n-- > 0) {
         *s++ = 0;
     }
 
@@ -120,11 +119,11 @@ char* safestrcpy(char *s, const char *t, int n)
 
     os = s;
 
-    if(n <= 0) {
+    if (n <= 0) {
         return os;
     }
 
-    while(--n > 0 && (*s++ = *t++) != 0)
+    while (--n > 0 && (*s++ = *t++) != 0)
         ;
 
     *s = 0;
@@ -135,7 +134,7 @@ int strlen(const char *s)
 {
     int n;
 
-    for(n = 0; s[n]; n++)
+    for (n = 0; s[n]; n++)
         ;
 
     return n;

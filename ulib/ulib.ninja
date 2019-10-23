@@ -1,2 +1,4 @@
-rule perl_compile
-  command = perl $in > $out
+build $builddir/ulib.o: c_compile ulib/ulib.c
+build $builddir/umalloc.o: c_compile ulib/umalloc.c
+build $builddir/usys.o: c_compile ulib/usys.S
+build $builddir/printf.o: c_compile ulib/printf.c

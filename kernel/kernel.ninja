@@ -1,8 +1,41 @@
+rule initcode_compile
+  command = $cc $cflags  -nostdinc -nostdlib -Iinclude -c $in -o $out
 
+rule initcode_link
+  command = $ld $user_ldflags -e start $in -o $out -L $libgcc
+ # --specs=nosys.specs
+rule initcode_objcopy
+  command = $objcopy -S -O binary --prefix-symbols="_binary_$in" $in $out
+
+build $builddir/bio.o: c_compile kernel/bio.c
 build $builddir/bootasm.o: as_compile kernel/bootasm.S
 build $builddir/bootmain.o: c_compile kernel/bootmain.c
+build $builddir/buddy.o: c_compile kernel/buddy.c
+build $builddir/console.o: c_compile kernel/console.c
+build $builddir/eabi.o: c_compile kernel/eabi.c
+build $builddir/exec.o: c_compile kernel/exec.c
+build $builddir/file.o: c_compile kernel/file.c
+build $builddir/fs.o: c_compile kernel/fs.c
+build $builddir/ide.o: c_compile kernel/ide.c
+build $builddir/initcode.o: initcode_compile kernel/initcode.S
+build $builddir/initcode.out: initcode_link $builddir/initcode.o
+build $builddir/initcode: initcode_objcopy $builddir/initcode.out
+build $builddir/log.o: c_compile kernel/log.c
 build $builddir/main.o: c_compile kernel/main.c
+build $builddir/picirq.o: c_compile kernel/picirq.c
+build $builddir/pipe.o: c_compile kernel/pipe.c
+build $builddir/proc.o: c_compile kernel/proc.c
+build $builddir/spinlock.o: c_compile kernel/spinlock.c
 build $builddir/string.o: c_compile kernel/string.c
+build $builddir/swtch.o: c_compile kernel/swtch.S
+build $builddir/syscall.o: c_compile kernel/syscall.c
+build $builddir/sysfile.o: c_compile kernel/sysfile.c
+build $builddir/sysproc.o: c_compile kernel/sysproc.c
+build $builddir/timer.o: c_compile kernel/timer.c
+build $builddir/trap.o: c_compile kernel/trap.c
+build $builddir/trapasm.o: c_compile kernel/trapasm.S
+build $builddir/uart.o: c_compile kernel/uart.c
+build $builddir/vm.o: c_compile kernel/vm.c
 
-build $builddir/kernel.elf: link $builddir/bootasm.o $builddir/bootmain.o $builddir/main.o $builddir/string.o 
+build $builddir/kernel.elf: ld_link $builddir/bio.o $builddir/buddy.o $builddir/bootasm.o $builddir/bootmain.o $builddir/console.o $builddir/eabi.o $builddir/exec.o $builddir/file.o $builddir/fs.o $builddir/ide.o $builddir/log.o $builddir/main.o $builddir/picirq.o $builddir/pipe.o $builddir/proc.o $builddir/spinlock.o $builddir/string.o $builddir/swtch.o $builddir/syscall.o $builddir/sysfile.o $builddir/sysproc.o $builddir/timer.o $builddir/trap.o $builddir/trapasm.o $builddir/uart.o $builddir/vm.o | $builddir/fs.img
 build $builddir/kernel.asm: dump $builddir/kernel.elf

@@ -19,7 +19,75 @@
 // 3. interrupt service ended, and execution returns to the syscall.
 // 4. kernel decides to reschedule (context switch), it saves the kernel states
 // and switches to a new process (including user-space banked registers)
+
+// Interrupt control bits
+#define NO_INT      0xc0 // disable IRQ.
+#define DIS_INT     0x80 // disable both IRQ and FIQ.
+
+// ARM modes.
+#define MODE_MASK   0x1f
+#define USR_MODE    0x10
+#define FIQ_MODE    0x11
+#define IRQ_MODE    0x12
+#define SVC_MODE    0x13
+#define ABT_MODE    0x17
+#define UND_MODE    0x1b
+#define SYS_MODE    0x1f
+
+// vector table
+#define TRAP_RESET  0
+#define TRAP_UND    1
+#define TRAP_SWI    2
+#define TRAP_IABT   3
+#define TRAP_DABT   4
+#define TRAP_NA     5
+#define TRAP_IRQ    6
+#define TRAP_FIQ    7
+
 #ifndef __ASSEMBLER__
+#include "memlayout.h"
+
+static void cli(void) {
+	uint val;
+
+	asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+	val |= DIS_INT;
+	asm volatile("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
+}
+
+static void sti(void) {
+	uint val;
+
+	asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+	val &= ~DIS_INT;
+	asm volatile("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
+}
+
+static uint spsr_usr() {
+	uint val;
+
+    asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+    val &= ~MODE_MASK;
+    val |= USR_MODE;
+
+    return val;
+}
+
+static inline int int_enabled() {
+	uint val;
+
+	asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+
+	return !(val & DIS_INT);
+}
+
+static inline int get_fp() {
+	uint val;
+	asm volatile("mov %[v], fp": [v]"=r" (val)::);
+	return val;
+}
+
+
 struct trapframe {
 	uint    sp_usr;     // user mode sp
 	uint    lr_usr;     // user mode lr
@@ -41,31 +109,5 @@ struct trapframe {
 	uint    pc;         // (lr on entry) instruction to resume execution
 };
 #endif
-
-// Interrupt control bits
-// NO_INT means disable IRQ.
-#define NO_INT      0xc0
-// DIS_INT means disable both IRQ and FIQ.
-#define DIS_INT     0x80
-
-// ARM modes.
-#define MODE_MASK   0x1f
-#define USR_MODE    0x10
-#define FIQ_MODE    0x11
-#define IRQ_MODE    0x12
-#define SVC_MODE    0x13
-#define ABT_MODE    0x17
-#define UND_MODE    0x1b
-#define SYS_MODE    0x1f
-
-// vector table
-#define TRAP_RESET  0
-#define TRAP_UND    1
-#define TRAP_SWI    2
-#define TRAP_IABT   3
-#define TRAP_DABT   4
-#define TRAP_NA     5
-#define TRAP_IRQ    6
-#define TRAP_FIQ    7
 
 #endif

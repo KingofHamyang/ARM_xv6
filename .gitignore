@@ -22,4 +22,3 @@ a.out
 .vscode/
 out/
 tools/mkfs
-ulib/usys.S

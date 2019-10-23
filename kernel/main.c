@@ -3,10 +3,8 @@
 
 extern void *end;
 
-extern void _puts(char*);
-
 struct cpu *cpu;
 
 int kmain (void) {
-	for(;;);
+	for (;;);
 }
