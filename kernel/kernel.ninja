@@ -7,8 +7,9 @@ rule initcode_link
 rule initcode_objcopy
   command = $objcopy -S -O binary --prefix-symbols="_binary_$in" $in $out
 
+build $builddir/binary.o: c_compile kernel/binary.S | $builddir/fs.img $builddir/initcode
 build $builddir/bio.o: c_compile kernel/bio.c
-build $builddir/bootasm.o: as_compile kernel/bootasm.S
+build $builddir/bootasm.o: c_compile kernel/bootasm.S
 build $builddir/bootmain.o: c_compile kernel/bootmain.c
 build $builddir/buddy.o: c_compile kernel/buddy.c
 build $builddir/console.o: c_compile kernel/console.c
@@ -37,5 +38,5 @@ build $builddir/trapasm.o: c_compile kernel/trapasm.S
 build $builddir/uart.o: c_compile kernel/uart.c
 build $builddir/vm.o: c_compile kernel/vm.c
 
-build $builddir/kernel.elf: ld_link $builddir/bio.o $builddir/buddy.o $builddir/bootasm.o $builddir/bootmain.o $builddir/console.o $builddir/eabi.o $builddir/exec.o $builddir/file.o $builddir/fs.o $builddir/ide.o $builddir/log.o $builddir/main.o $builddir/picirq.o $builddir/pipe.o $builddir/proc.o $builddir/spinlock.o $builddir/string.o $builddir/swtch.o $builddir/syscall.o $builddir/sysfile.o $builddir/sysproc.o $builddir/timer.o $builddir/trap.o $builddir/trapasm.o $builddir/uart.o $builddir/vm.o | $builddir/fs.img
+build $builddir/kernel.elf: ld_link $builddir/binary.o $builddir/bio.o $builddir/buddy.o $builddir/bootasm.o $builddir/bootmain.o $builddir/console.o $builddir/eabi.o $builddir/exec.o $builddir/file.o $builddir/fs.o $builddir/ide.o $builddir/log.o $builddir/main.o $builddir/picirq.o $builddir/pipe.o $builddir/proc.o $builddir/spinlock.o $builddir/string.o $builddir/swtch.o $builddir/syscall.o $builddir/sysfile.o $builddir/sysproc.o $builddir/timer.o $builddir/trap.o $builddir/trapasm.o $builddir/uart.o $builddir/vm.o
 build $builddir/kernel.asm: dump $builddir/kernel.elf

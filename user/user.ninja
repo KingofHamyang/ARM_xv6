@@ -40,4 +40,4 @@ build $builddir/_wc: user_link $builddir/wc.o | $builddir/ulib.o $builddir/usys.
 build $builddir/_zombie: user_link $builddir/zombie.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 # Also, don't forget insert your program into fs.img!
 
-build $builddir/fs.img: mkfs_img $builddir/_cat $builddir/_echo $builddir/_forktest $builddir/_grep $builddir/_init $builddir/_kill $builddir/_ln $builddir/_ls $builddir/_mkdir $builddir/_rm $builddir/_sh $builddir/_stressfs $builddir/_wc $builddir/_zombie | tools/mkfs $builddir/initcode
+build $builddir/fs.img: mkfs_img $builddir/_cat $builddir/_echo $builddir/_forktest $builddir/_grep $builddir/_init $builddir/_kill $builddir/_ln $builddir/_ls $builddir/_mkdir $builddir/_rm $builddir/_sh $builddir/_stressfs $builddir/_wc $builddir/_zombie | tools/mkfs

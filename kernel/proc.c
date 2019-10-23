@@ -115,7 +115,7 @@ void error_init ()
 void userinit(void)
 {
     struct proc *p;
-    extern char _binary_initcode_start[], _binary_initcode_size[];
+    extern char _binary_initcode_start[], _binary_initcode_end[];
 
     p = allocproc();
     initproc = p;
@@ -124,7 +124,7 @@ void userinit(void)
         panic("userinit: out of memory?");
     }
 
-    inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
+    inituvm(p->pgdir, _binary_initcode_start, (int)(_binary_initcode_end - _binary_initcode_start));
 
     p->sz = PTE_SZ;
 
