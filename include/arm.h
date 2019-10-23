@@ -50,23 +50,23 @@
 static void cli(void) {
 	uint val;
 
-	asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+	__asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
 	val |= DIS_INT;
-	asm volatile("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
+	__asm__ __volatile__ ("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
 }
 
 static void sti(void) {
 	uint val;
 
-	asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+	__asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
 	val &= ~DIS_INT;
-	asm volatile("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
+	__asm__ __volatile__ ("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
 }
 
 static uint spsr_usr() {
 	uint val;
 
-    asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+    __asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
     val &= ~MODE_MASK;
     val |= USR_MODE;
 
@@ -76,17 +76,10 @@ static uint spsr_usr() {
 static inline int int_enabled() {
 	uint val;
 
-	asm volatile("mrs %[v], cpsr": [v]"=r" (val)::);
+	__asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
 
 	return !(val & DIS_INT);
 }
-
-static inline int get_fp() {
-	uint val;
-	asm volatile("mov %[v], fp": [v]"=r" (val)::);
-	return val;
-}
-
 
 struct trapframe {
 	uint    sp_usr;     // user mode sp

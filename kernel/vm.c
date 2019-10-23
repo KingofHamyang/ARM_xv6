@@ -26,36 +26,33 @@ struct {
     struct run *freelist;
 } kpt_mem;
 
-void init_vmm (void)
-{
+void init_vmm (void) {
     initlock(&kpt_mem.lock, "vm");
     kpt_mem.freelist = NULL;
 }
 
-static void _kpt_free (char *v)
-{
+static void _kpt_free (char *v) {
     struct run *r;
 
-    r = (struct run*) v;
+    r = (struct run *) v;
     r->next = kpt_mem.freelist;
     kpt_mem.freelist = r;
 }
 
 
-static void kpt_free (char *v)
-{
-    if (v >= (char*)P2V(INIT_KERNMAP)) {
+static void kpt_free (char *v) {
+    if (v >= (char *)P2V(INIT_KERNMAP)) {
         kfree(v, PT_ORDER);
         return;
     }
-    
+
     acquire(&kpt_mem.lock);
-    _kpt_free (v);
+    _kpt_free(v);
     release(&kpt_mem.lock);
 }
 
 // add some memory used for page tables (initialization code)
-void kpt_freerange (uint32 low, uint32 hi)
+void kpt_freerange(uint low, uint hi)
 {
     while (low < hi) {
         _kpt_free ((char*)low);
@@ -63,7 +60,7 @@ void kpt_freerange (uint32 low, uint32 hi)
     }
 }
 
-void* kpt_alloc (void)
+void* kpt_alloc(void)
 {
     struct run *r;
     
@@ -86,7 +83,7 @@ void* kpt_alloc (void)
 
 // Return the address of the PTE in page directory that corresponds to
 // virtual address va.  If alloc!=0, create any required page table pages.
-static pte_t* walkpgdir (pde_t *pgdir, const void *va, int alloc)
+static pte_t* walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
     pde_t *pde;
     pte_t *pgtab;
@@ -117,13 +114,13 @@ static pte_t* walkpgdir (pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-static int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
+static int mappages(pde_t *pgdir, void *va, uint size, uint pa, int ap)
 {
     char *a, *last;
     pte_t *pte;
 
-    a = (char*) align_dn(va, PTE_SZ);
-    last = (char*) align_dn((uint)va + size - 1, PTE_SZ);
+    a = (char*) ALIGNDOWN(va, PTE_SZ);
+    last = (char*) ALIGNDOWN((uint)va + size - 1, PTE_SZ);
 
     for (;;) {
         if ((pte = walkpgdir(pgdir, a, 1)) == 0) {
@@ -148,14 +145,14 @@ static int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
 }
 
 // flush all TLB
-static void flush_tlb (void)
+static void flush_tlb(void)
 {
     uint val = 0;
-    asm("MCR p15, 0, %[r], c8, c7, 0" : :[r]"r" (val):);
+    __asm__ __volatile__ ("MCR p15, 0, %[r], c8, c7, 0" : :[r]"r" (val):);
 
     // invalid entire data and instruction cache
-    asm ("MCR p15,0,%[r],c7,c10,0": :[r]"r" (val):);
-    asm ("MCR p15,0,%[r],c7,c11,0": :[r]"r" (val):);
+    __asm__ __volatile__ ("MCR p15,0,%[r],c7,c10,0": :[r]"r" (val):);
+    __asm__ __volatile__ ("MCR p15,0,%[r],c7,c11,0": :[r]"r" (val):);
 }
 
 // Switch to the user page table (TTBR0)
@@ -171,7 +168,7 @@ void switchuvm (struct proc *p)
 
     val = (uint) V2P(p->pgdir) | 0x00;
 
-    asm("MCR p15, 0, %[v], c2, c0, 0": :[v]"r" (val):);
+    __asm__ __volatile__ ("MCR p15, 0, %[v], c2, c0, 0": :[v]"r" (val):);
     flush_tlb();
 
     popcli();
@@ -239,7 +236,7 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         return oldsz;
     }
 
-    a = align_up(oldsz, PTE_SZ);
+    a = ALIGNUP(oldsz, PTE_SZ);
 
     for (; a < newsz; a += PTE_SZ) {
         mem = alloc_page();
@@ -271,13 +268,13 @@ int deallocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         return oldsz;
     }
 
-    for (a = align_up(newsz, PTE_SZ); a < oldsz; a += PTE_SZ) {
+    for (a = ALIGNUP(newsz, PTE_SZ); a < oldsz; a += PTE_SZ) {
         pte = walkpgdir(pgdir, (char*) a, 0);
 
         if (!pte) {
             // pte == 0 --> no page table for this entry
             // round it up to the next page directory
-            a = align_up (a, PDE_SZ);
+            a = ALIGNUP (a, PDE_SZ);
 
         } else if ((*pte & PE_TYPES) != 0) {
             pa = PTE_ADDR(*pte);
@@ -410,7 +407,7 @@ int copyout (pde_t *pgdir, uint va, void *p, uint len)
     buf = (char*) p;
 
     while (len > 0) {
-        va0 = align_dn(va, PTE_SZ);
+        va0 = ALIGNDOWN(va, PTE_SZ);
         pa0 = uva2ka(pgdir, (char*) va0);
 
         if (pa0 == 0) {
