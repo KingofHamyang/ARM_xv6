@@ -2,16 +2,16 @@
 #include "arm.h"
 
 void* memset(void *dst, int v, uint n) {
-    uint8	*p;
-    uint8	c;
-    uint32	val;
-    uint32	*p4;
+    uchar	*p;
+    uchar	c;
+    uint	val;
+    uint	*p4;
 
     p   = dst;
     c   = v & 0xff;
     val = (c << 24) | (c << 16) | (c << 8) | c;
 
-    // set bytes before whole uint32
+    // set bytes before whole uint
     for (; (n > 0) && ((uint)p % 4); n--, p++) {
         *p = c;
     }
@@ -24,7 +24,7 @@ void* memset(void *dst, int v, uint n) {
     }
 
     // set leftover one byte a time
-    p = (uint8*)p4;
+    p = (uchar*)p4;
 
     for (; n > 0; n--, p++) {
         *p = c;

@@ -8,7 +8,6 @@
 #include "spinlock.h"
 #include "arm.h"
 
-
 // this file implement the buddy memory allocator. Each order divides
 // the memory pool into equal-sized blocks (2^n). We use bitmap to record
 // allocation status for each block. This allows for efficient merging
@@ -21,19 +20,19 @@
 #define N_ORD        (MAX_ORD - MIN_ORD +1)
 
 struct mark {
-    uint32  lnks;       // double links (actually indexes) 
-    uint32  bitmap;     // bitmap, whether the block is available (1=available)
+    uint  lnks;       // double links (actually indexes) 
+    uint  bitmap;     // bitmap, whether the block is available (1=available)
 };
 
 // lnks is a combination of previous link (index) and next link (index)
 #define PRE_LNK(lnks)   ((lnks) >> 16)
 #define NEXT_LNK(lnks)  ((lnks) & 0xFFFF)
 #define LNKS(pre, next) (((pre) << 16) | ((next) & 0xFFFF))
-#define NIL             ((uint16)0xFFFF)
+#define NIL             ((ushort)0xFFFF)
 
 struct order {
-    uint32  head;       // the first non-empty mark
-    uint32  offset;     // the first mark
+    uint  head;       // the first non-empty mark
+    uint  offset;     // the first mark
 };
 
 struct kmem {
@@ -75,7 +74,7 @@ void kmem_init (void)
 void kmem_init2(void *vstart, void *vend)
 {
     int             i, j;
-    uint32          total, n;
+    uint          total, n;
     uint            len;
     struct order    *ord;
     struct mark     *mk;
@@ -105,7 +104,7 @@ void kmem_init2(void *vstart, void *vend)
     }
 
     // add all available memory to the highest order bucket
-    kmem.start_heap = align_up(kmem.start + total * sizeof(*mk), 1 << MAX_ORD);
+    kmem.start_heap = ALIGNUP(kmem.start + total * sizeof(*mk), 1 << MAX_ORD);
     
     for (i = kmem.start_heap; i < kmem.end; i += (1 << MAX_ORD)){
         kfree ((void*)i, MAX_ORD);
@@ -222,7 +221,7 @@ void _kfree (void *mem, int order);
 static void *_kmalloc (int order)
 {
     struct order *ord;
-    uint8         *up;
+    uchar         *up;
 
     ord = &kmem.orders[order - MIN_ORD];
     up  = NULL;
@@ -245,7 +244,7 @@ static void *_kmalloc (int order)
 // allocate memory that has the size of (1 << order)
 void *kmalloc (int order)
 {
-    uint8         *up;
+    uchar         *up;
 
     if ((order > MAX_ORD) || (order < MIN_ORD)) {
         panic("kmalloc: order out of range\n");
@@ -308,9 +307,9 @@ void* alloc_page (void)
 
 // round up power of 2, then get the order
 //   http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-int get_order (uint32 v)
+int get_order (uint v)
 {
-    uint32 ord;
+    uint ord;
     
     v--;
     v |= v >> 1;

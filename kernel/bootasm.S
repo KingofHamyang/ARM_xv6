@@ -4,6 +4,7 @@
 .global _start
 .global jump_stack
 .global set_stk
+.global get_fp
 
 _start:
 	ldr r1, =boot_start_addr
@@ -22,12 +23,12 @@ _start:
 	b .
 
 jump_stack:
+/*
 	mov r0, sp
 	add r0, r0, #KERNBASE
 	mov sp, r0
-/*
-	add sp, sp, #KERNBASE
 */
+	add sp, sp, #KERNBASE
 	mov pc, lr
 
 # set the stack for IRQ mode, we can use r0-r3 for free
@@ -48,4 +49,8 @@ set_stk:
     MSR     cpsr_cxsf, r2
 
     # return
+    bx      lr
+
+get_fp:
+    MOV     r0, fp
     bx      lr

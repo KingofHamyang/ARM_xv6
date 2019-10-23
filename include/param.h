@@ -15,6 +15,6 @@
 
 #define HZ           10
 
-#define N_CALLSTK    15
+#define STACK_DEPTH  32
 
 #endif

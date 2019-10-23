@@ -22,9 +22,9 @@ static struct {
     int locking;
 } cons;
 
-static void printint (int xx, int base, int sign)
+static void printint(int xx, int base, int sign)
 {
-    static char digits[] = "0123456789abcdef";
+    static char digits[] = "0123456789ABCDEF";
     char buf[16];
     int i;
     uint x;
@@ -41,13 +41,9 @@ static void printint (int xx, int base, int sign)
         buf[i++] = digits[x % base];
     } while ((x /= base) != 0);
 
-    if (sign) {
-        buf[i++] = '-';
-    }
+    if (sign) buf[i++] = '-';
 
-    while (--i >= 0) {
-        consputc(buf[i]);
-    }
+    while (--i >= 0) consputc(buf[i]);
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
@@ -59,13 +55,9 @@ void cprintf (char *fmt, ...)
 
     locking = cons.locking;
 
-    if (locking) {
-        acquire(&cons.lock);
-    }
+    if (locking) acquire(&cons.lock);
 
-    if (fmt == 0) {
-        panic("null fmt");
-    }
+    if (fmt == 0)  panic("null fmt");
 
     argp = (uint*) (void*) (&fmt + 1);
 
@@ -77,9 +69,7 @@ void cprintf (char *fmt, ...)
 
         c = fmt[++i] & 0xff;
 
-        if (c == 0) {
-            break;
-        }
+        if (!c) break;
 
         switch (c) {
         case 'd':
@@ -113,24 +103,21 @@ void cprintf (char *fmt, ...)
         }
     }
 
-    if (locking) {
-        release(&cons.lock);
-    }
+    if (locking) release(&cons.lock);
 }
 
-void panic (char *s)
+void panic(char *s)
 {
     cli();
 
     cons.locking = 0;
 
-    cprintf("cpu%d: panic: ", cpu->id);
+    cprintf("cpu %d: panic: ", cpu->id);
 
     show_callstk(s);
     panicked = 1; // freeze other CPU
 
-    while (1)
-        ;
+    while (1);
 }
 
 #define BACKSPACE 0x100
@@ -140,17 +127,14 @@ void consputc (int c)
 {
     if (panicked) {
         cli();
-        while (1)
-            ;
+        for (;;);
     }
 
     if (c == BACKSPACE) {
         uartputc('\b');
         uartputc(' ');
         uartputc('\b');
-    } else {
-        uartputc(c);
-    }
+    } else uartputc(c);
 
     // cgaputc(c);
 }
