@@ -28,8 +28,7 @@ rule cc_link
   command = $cc $ldflags $in $builddir/initcode $builddir/fs.img -o $out
 
 rule ld_link
-  command = $ld -m armelf -T kernel/kernel.ld -L$libgcc -L$builddir $in -o $out -b binary $builddir/initcode $builddir/fs.img
-
+  command = $ld -L$builddir -T kernel/kernel.ld -o $out $in $libgcc
 rule dump
   command = $objdump -S $in > $out
 

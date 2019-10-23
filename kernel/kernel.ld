@@ -59,6 +59,12 @@ SECTIONS
 
 	.data : {
 		*(.data .data.*)
+		PROVIDE(_binary_initcode_start = .);
+		*(.rawdata_initcode*)
+		PROVIDE(_binary_initcode_end = .);
+		PROVIDE(_binary_fs_img_start = .);
+		*(.rawdata_fs_img*)
+		PROVIDE(_binary_fs_img_end = .);
 	}
 
 	PROVIDE(kern_data_end = .);
