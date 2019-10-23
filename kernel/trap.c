@@ -50,10 +50,10 @@ void dabort_handler (struct trapframe *r)
     cli();
 
     // read data fault status register
-    asm("MRC p15, 0, %[r], c5, c0, 0": [r]"=r" (dfs)::);
+    __asm__ __volatile__ ("MRC p15, 0, %[r], c5, c0, 0": [r]"=r" (dfs)::);
 
     // read the fault address register
-    asm("MRC p15, 0, %[r], c6, c0, 0": [r]"=r" (fa)::);
+    __asm__ __volatile__ ("MRC p15, 0, %[r], c6, c0, 0": [r]"=r" (fa)::);
     
     cprintf ("data abort: instruction 0x%x, fault addr 0x%x, reason 0x%x \n",
              r->pc, fa, dfs);
@@ -67,7 +67,7 @@ void iabort_handler (struct trapframe *r)
     uint ifs;
     
     // read fault status register
-    asm("MRC p15, 0, %[r], c5, c0, 0": [r]"=r" (ifs)::);
+    __asm__ __volatile__ ("MRC p15, 0, %[r], c5, c0, 0": [r]"=r" (ifs)::);
 
     cli();
     cprintf ("prefetch abort at: 0x%x (reason: 0x%x)\n", r->pc, ifs);
@@ -92,16 +92,16 @@ void fiq_handler (struct trapframe *r)
 // to flash during startup, we need to remap it to SDRAM
 void trap_init ( )
 {
-    volatile uint32 *ram_start;
+    volatile uint *ram_start;
     char *stk;
     int i;
     uint modes[] = {FIQ_MODE, IRQ_MODE, ABT_MODE, UND_MODE};
 
     // the opcode of PC relative load (to PC) instruction LDR pc, [pc,...]
-    static uint32 const LDR_PCPC = 0xE59FF000U;
+    static uint const LDR_PCPC = 0xE59FF000U;
 
     // create the excpetion vectors
-    ram_start = (uint32*)VEC_TBL;
+    ram_start = (uint*)VEC_TBL;
 
     ram_start[0] = LDR_PCPC | 0x18; // Reset (SVC)
     ram_start[1] = LDR_PCPC | 0x18; // Undefine Instruction (UND)
@@ -112,14 +112,14 @@ void trap_init ( )
     ram_start[6] = LDR_PCPC | 0x18; // IRQ (IRQ)
     ram_start[7] = LDR_PCPC | 0x18; // FIQ (FIQ)
 
-    ram_start[8]  = (uint32)trap_reset;
-    ram_start[9]  = (uint32)trap_und;
-    ram_start[10] = (uint32)trap_swi;
-    ram_start[11] = (uint32)trap_iabort;
-    ram_start[12] = (uint32)trap_dabort;
-    ram_start[13] = (uint32)trap_na;
-    ram_start[14] = (uint32)trap_irq;
-    ram_start[15] = (uint32)trap_fiq;
+    ram_start[8]  = (uint)trap_reset;
+    ram_start[9]  = (uint)trap_und;
+    ram_start[10] = (uint)trap_swi;
+    ram_start[11] = (uint)trap_iabort;
+    ram_start[12] = (uint)trap_dabort;
+    ram_start[13] = (uint)trap_na;
+    ram_start[14] = (uint)trap_irq;
+    ram_start[15] = (uint)trap_fiq;
 
     // initialize the stacks for different mode
     for (i = 0; i < sizeof(modes)/sizeof(uint); i++) {

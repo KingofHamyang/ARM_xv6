@@ -5,17 +5,17 @@
 #include "defs.h"
 #include "memlayout.h"
 
-void _puts(char *s) { while (*s) *((volatile uint8 *)UART0) = *s++; }
+void _puts(char *s) { while (*s) *((volatile uchar *)UART0) = *s++; }
 
 
-extern uint32 _kt;
-extern uint32 _ut;
+extern uint _kt;
+extern uint _ut;
 
-uint32 *kern_table = &_kt;
-uint32 *user_table = &_ut;
+uint *kern_table = &_kt;
+uint *user_table = &_ut;
 
-void set_bootpgtbl(uint32 v, uint32 p, uint len, int is_dev) {
-	uint32 pde;
+void set_bootpgtbl(uint v, uint p, uint len, int is_dev) {
+	uint pde;
 	int i;
 
 	v >>= PDE_SHIFT;
@@ -32,23 +32,23 @@ void set_bootpgtbl(uint32 v, uint32 p, uint len, int is_dev) {
     }
 }
 
-void load_pgtbl(uint32 *kern_pgtbl, uint32 *user_pgtbl) {
+void load_pgtbl(uint *kern_pgtbl, uint *user_pgtbl) {
     uint val;
 
-    asm volatile("mcr p15, 0, %[v], c3, c0, 0": :[v]"r" (0x55555555):); // set domain access control as client
-    asm volatile("mcr p15, 0, %[v], c2, c0, 2": :[v]"r" (0x20 - UADDR_BITS):);// set the page table base registers.
-    asm volatile("mcr p15, 0, %[v], c2, c0, 1": :[v]"r" ((uint)kern_pgtbl):); // set the kernel page table
-    asm volatile("mcr p15, 0, %[v], c2, c0, 0": :[v]"r" ((uint)user_pgtbl):); // set the user page table
+    __asm__ __volatile__ ("mcr p15, 0, %[v], c3, c0, 0": :[v]"r" (0x55555555):); // set domain access control as client
+    __asm__ __volatile__ ("mcr p15, 0, %[v], c2, c0, 2": :[v]"r" (0x20 - UADDR_BITS):);// set the page table base registers.
+    __asm__ __volatile__ ("mcr p15, 0, %[v], c2, c0, 1": :[v]"r" ((uint)kern_pgtbl):); // set the kernel page table
+    __asm__ __volatile__ ("mcr p15, 0, %[v], c2, c0, 0": :[v]"r" ((uint)user_pgtbl):); // set the user page table
 
     // Enable paging using read/modify/write
-    asm volatile("mrc p15, 0, %[r], c1, c0, 0": [r]"=r" (val)::);
+    __asm__ __volatile__ ("mrc p15, 0, %[r], c1, c0, 0": [r]"=r" (val)::);
     val |= 0x80300D; // Enable MMU, cache, write buffer, high vector tbl. Disable subpage.
-    asm volatile("mcr p15, 0, %[r], c1, c0, 0": :[r]"r" (val):);
+    __asm__ __volatile__ ("mcr p15, 0, %[r], c1, c0, 0": :[r]"r" (val):);
 
     // flush all TLB
-    asm volatile("mcr p15, 0, %[r], c8, c7, 0" : :[r]"r" (0):);
-    asm volatile("mcr p15,0,%[r],c7,c5,0": :[r]"r" (0):);
-    asm volatile("mcr p15,0,%[r],c7,c6,0": :[r]"r" (0):);
+    __asm__ __volatile__ ("mcr p15, 0, %[r], c8, c7, 0" : :[r]"r" (0):);
+    __asm__ __volatile__ ("mcr p15,0,%[r],c7,c5,0": :[r]"r" (0):);
+    __asm__ __volatile__ ("mcr p15,0,%[r],c7,c6,0": :[r]"r" (0):);
 }
 
 extern void *boot_start_addr;
@@ -62,7 +62,7 @@ extern void *kern_end;
 static inline void clear_bss (void) { memset(&kern_data_end, 0x00, (uint)&kern_end - (uint)&kern_data_end); }
 
 void bootmain(void) {
-	uint32 vec_table;
+	uint vec_table;
 
     _puts("Start xv6...\n");
 
