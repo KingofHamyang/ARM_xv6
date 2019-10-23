@@ -6,14 +6,10 @@
 // 64MB memory is mapped to the flash, needs to be remapped
 // the the SDRAM. We skip this for QEMU
 #define PHYSTOP         0x08000000
-#define BSP_MEMREMAP    0x04000000
 
 #define DEVBASE         0x10000000
 #define DEV_MEM_SZ      0x08000000
 #define VEC_TBL         0xFFFF0000
-
-
-#define STACK_FILL      0x8BADF00D
 
 #define UART0           0x101F1000
 #define UART_CLK        24000000    // Clock rate for UART
@@ -26,6 +22,5 @@
 #define PIC_TIMER01     4
 #define PIC_TIMER23     5
 #define PIC_UART0       12
-#define PIC_GRAPHIC     19
 
 #endif

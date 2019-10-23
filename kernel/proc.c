@@ -413,13 +413,8 @@ void sleep(void *chan, struct spinlock *lk)
 {
     //show_callstk("sleep");
 
-    if(proc == 0) {
-        panic("sleep");
-    }
-
-    if(lk == 0) {
-        panic("sleep without lk");
-    }
+    if(!proc) panic("sleep");
+    if(!lk) panic("sleep without lk");
 
     // Must acquire ptable.lock in order to change p->state and then call
     // sched. Once we hold ptable.lock, we can be guaranteed that we won't
@@ -472,22 +467,20 @@ int kill(int pid)
     struct proc *p;
 
     acquire(&ptable.lock);
-
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->pid == pid){
             p->killed = 1;
 
             // Wake process from sleep if necessary.
-            if(p->state == SLEEPING) {
+            if(p->state == SLEEPING) 
                 p->state = RUNNABLE;
-            }
 
             release(&ptable.lock);
             return 0;
         }
     }
-
     release(&ptable.lock);
+
     return -1;
 }
 
@@ -508,18 +501,11 @@ void procdump(void)
     char *state;
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->state == UNUSED) {
-            continue;
-        }
-
-        if(p->state >= 0 && p->state < NELEM(states) && states[p->state]) {
+        if(p->state == UNUSED) continue;
+        if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
             state = states[p->state];
-        } else {
-            state = "???";
-        }
-
+        else state = "???";
         cprintf("%d %s %d:%s %d\n", p->pid, state, p->pid, p->name, p->parent->pid);
     }
-
     show_callstk("procdump: \n");
 }

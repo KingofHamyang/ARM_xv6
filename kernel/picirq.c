@@ -21,6 +21,7 @@
 
 // define the register offsets (in the unit of 4 bytes). The base address
 // of the VIC depends on the board
+
 static volatile uint* vic_base;
 
 #define VIC_IRQSTATUS	0 // status of interrupts after masking by ENABLE and SEL
