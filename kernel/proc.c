@@ -269,7 +269,7 @@ int wait(void)
 
     acquire(&ptable.lock);
 
-    for(;;){
+    for(;;) {
         // Scan through table looking for zombie children.
         havekids = 0;
 
@@ -319,7 +319,7 @@ void scheduler(void)
 {
     struct proc *p;
 
-    for(;;){
+    for(;;) {
         // Enable interrupts on this processor.
         sti();
 

@@ -9,66 +9,54 @@
 #include "proc.h"
 #include "spinlock.h"
 
-void initlock(struct spinlock *lk, char *name)
-{
+void initlock(struct spinlock *lk, char *name) {
     lk->name = name;
     lk->locked = 0;
     lk->cpu = 0;
 }
 
-// For single CPU systems, there is no need for spinlock.
-// Add the support when multi-processor is supported.
-
-
 // Acquire the lock.
 // Loops (spins) until the lock is acquired.
 // Holding a lock for a long time may cause
 // other CPUs to waste time spinning to acquire it.
-void acquire(struct spinlock *lk)
-{
-    pushcli();		// disable interrupts to avoid deadlock.
-    lk->locked = 1;	// set the lock status to make the kernel happy
+void acquire(struct spinlock *lk) {
+    pushcli(); // disable interrupts to avoid deadlock.
+    if (holding(lk)) panic("acquire");
 
-#if 0
-    if(holding(lk))
-        panic("acquire");
+    while (xchg(&lk->locked, 1) != 0);
 
-    // The xchg is atomic.
-    // It also serializes, so that reads after acquire are not
-    // reordered before it.
-    while(xchg(&lk->locked, 1) != 0)
-        ;
+    // Tell the C compiler and the processor to not move loads or stores
+    // past this point, to ensure that the critical section's memory
+    // references happen after the lock is acquired.
+    dmb(); // __sync_synchronize() is deprecated.
 
     // Record info about lock acquisition for debugging.
     lk->cpu = cpu;
     getcallerpcs(get_fp(), lk->pcs);
-
-#endif
 }
 
 // Release the lock.
-void release(struct spinlock *lk)
-{
-#if 0
+void release(struct spinlock *lk) {
+    uint tmp;
+
     if(!holding(lk))
         panic("release");
 
     lk->pcs[0] = 0;
     lk->cpu = 0;
 
-    // The xchg serializes, so that reads before release are
-    // not reordered after it.  The 1996 PentiumPro manual (Volume 3,
-    // 7.2) says reads can be carried out speculatively and in
-    // any order, which implies we need to serialize here.
-    // But the 2007 Intel 64 Architecture Memory Ordering White
-    // Paper says that Intel 64 and IA-32 will not move a load
-    // after a store. So lock->locked = 0 would work here.
-    // The xchg being asm volatile ensures gcc emits it after
-    // the above assignments (and after the critical section).
-    xchg(&lk->locked, 0);
-#endif
+    // Tell the C compiler and the processor to not move loads or stores
+    // past this point, to ensure that all the stores in the critical
+    // section are visible to other cores before the lock is released.
+    // Both the C compiler and the hardware may re-order loads and
+    // stores; __sync_synchronize() tells them both not to.
+    dmb(); // __sync_synchronize() is deprecated.
 
-    lk->locked = 0; // set the lock state to keep the kernel happy
+    // Release the lock, equivalent to lk->locked = 0.
+    // This code can't use a C assignment, since it might
+    // not be atomic. A real OS would use C atomics here.
+    lk->locked = 0; // 뭐 어쩔건데 걍 대입해...
+
     popcli();
 }
 
@@ -82,19 +70,19 @@ void getcallerpcs (void * v, uint pcs[])
     uint *fp;
     int i;
 
-    fp = (uint*) v;
+    fp = (uint *) v;
 
-    for (i = 0; i < N_CALLSTK; i++) {
-        if ((fp == 0) || (fp < (uint*)KERNBASE) || (fp == (uint*) 0xffffffff)) {
-            break;
-        }
+    for (i = 0; i < STACK_DEPTH; i++) {
+        if (fp == 0 ||
+            // fp < (uint *) KERNBASE ||
+            fp == (uint *) 0xFFFFFFFF) break;
 
-        fp -= 1;			// points fp to the saved fp
-        pcs[i] = fp[1];     // saved lr
-        fp = (uint*) fp[0];	// saved fp
+        fp -= 1;			      // points fp to the saved fp
+        pcs[i] = fp[1];           // saved lr
+        fp = (uint *) fp[0];      // saved fp
     }
 
-    for (; i < N_CALLSTK; i++) {
+    for (; i < STACK_DEPTH; i++) {
         pcs[i] = 0;
     }
 }
@@ -102,23 +90,20 @@ void getcallerpcs (void * v, uint pcs[])
 void show_callstk(char *s)
 {
     int i;
-    uint pcs[N_CALLSTK];
+    uint pcs[STACK_DEPTH];
 
     cprintf("%s\n", s);
 
-    getcallerpcs((void *)get_fp(), pcs);
+    getcallerpcs(get_fp(), pcs);
 
-    for (i = N_CALLSTK - 1; i >= 0; i--) {
-        cprintf("%d: 0x%x\n", i + 1, pcs[i]);
-    }
+    for (i = 0; i < STACK_DEPTH && pcs[i]; i++)
+        cprintf("STACK #%d: 0x%x\n", i + 1, pcs[i]);
 }
 
 // Check whether this cpu is holding the lock.
-int holding(struct spinlock *lock)
-{
+int holding(struct spinlock *lock) {
     return lock->locked; // && lock->cpu == cpus;
 }
-
 
 void pushcli (void)
 {

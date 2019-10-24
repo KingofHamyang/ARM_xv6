@@ -45,18 +45,27 @@ void und_handler (struct trapframe *r)
 // trap routine
 void dabort_handler (struct trapframe *r)
 {
-    uint dfs, fa;
+    uint ifs, dfs;
+    uint ifa, dfa;
 
-    cli();
 
+    // 얘 레퍼런스 잘못 본 거 같은데
     // read data fault status register
-    __asm__ __volatile__ ("MRC p15, 0, %[r], c5, c0, 0": [r]"=r" (dfs)::);
+    // __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
 
     // read the fault address register
-    __asm__ __volatile__ ("MRC p15, 0, %[r], c6, c0, 0": [r]"=r" (fa)::);
+    // __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(fa)::);
+
+    __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 1": "=r"(ifs)::);
+    __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
+    __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);
+    __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(dfa)::);
     
-    cprintf ("data abort: instruction 0x%x, fault addr 0x%x, reason 0x%x \n",
-             r->pc, fa, dfs);
+    cli();
+    cprintf ("data abort: inst 0x%x,\n"
+             "data fault at 0x%x, status 0x%x \n"
+             "inst       at 0x%x, status 0x%x \n",
+             r->pc, dfa, dfs, ifa, ifs);
     
     dump_trapframe (r);
 }
@@ -64,13 +73,21 @@ void dabort_handler (struct trapframe *r)
 // trap routine
 void iabort_handler (struct trapframe *r)
 {
-    uint ifs;
+    uint ifs, dfs;
+    uint ifa, dfa;
     
     // read fault status register
-    __asm__ __volatile__ ("MRC p15, 0, %[r], c5, c0, 0": [r]"=r" (ifs)::);
+    // 얘 레퍼런스 잘못 본 거 같은데 
+    __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 1": "=r"(ifs)::);
+    __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
+    __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);
+    __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(dfa)::);
 
     cli();
-    cprintf ("prefetch abort at: 0x%x (reason: 0x%x)\n", r->pc, ifs);
+    cprintf ("inst prefetch abort: inst 0x%x,\n"
+             "data fault at 0x%x, status 0x%x \n"
+             "inst       at 0x%x, status 0x%x \n",
+             r->pc, dfa, dfs, ifa, ifs);
     dump_trapframe (r);
 }
 
@@ -152,3 +169,4 @@ void dump_trapframe (struct trapframe *tf)
     cprintf ("    r12: 0x%x\n", tf->r12);
     cprintf ("     pc: 0x%x\n", tf->pc);
 }
+

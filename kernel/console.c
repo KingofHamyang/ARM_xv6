@@ -117,7 +117,7 @@ void panic(char *s)
     show_callstk(s);
     panicked = 1; // freeze other CPU
 
-    while (1);
+    for (;;);
 }
 
 #define BACKSPACE 0x100
