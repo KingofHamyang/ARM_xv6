@@ -3,8 +3,6 @@
 
 .global _start
 .global jump_stack
-.global set_stk
-.global get_fp
 
 _start:
 	ldr r1, =boot_start_addr
@@ -20,7 +18,7 @@ _start:
 	ldr sp, =svc_stack
 
 	bl bootmain
-	b .
+    b .
 
 jump_stack:
 /*
@@ -30,27 +28,3 @@ jump_stack:
 */
 	add sp, sp, #KERNBASE
 	mov pc, lr
-
-# set the stack for IRQ mode, we can use r0-r3 for free
-# input: r0 - #mode, r1 - stk
-set_stk:
-    # switch to the IRQ mode
-    MRS     r2, cpsr
-    BIC     r2, r2, #MODE_MASK
-    ORR     r2, r2, r0
-    MSR     cpsr_cxsf, r2
-
-    # set the stack pointer, sp register is banked, so we need to switch mode
-    MOV     sp, r1
-
-    # switch back to the SVC mode
-    BIC     r2, r2, #MODE_MASK
-    ORR     r2, r2, #SVC_MODE
-    MSR     cpsr_cxsf, r2
-
-    # return
-    bx      lr
-
-get_fp:
-    MOV     r0, fp
-    bx      lr

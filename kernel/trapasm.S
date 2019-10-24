@@ -13,6 +13,8 @@
 .global trap_na
 .global trap_fiq
 .global trapret
+.global set_stk
+.global get_fp
 
 
 # handle SWI, we allow nested SWI
@@ -162,3 +164,27 @@ trap_fiq:
     MOV     r0, r13                 // save trapframe as the first parameter
     BL      fiq_handler
     B       .
+
+# set the stack for IRQ mode, we can use r0-r3 for free
+# input: r0 - #mode, r1 - stk
+set_stk:
+    # switch to the IRQ mode
+    mrs     r2, cpsr
+    bic     r2, r2, #MODE_MASK
+    orr     r2, r2, r0
+    msr     cpsr_cxsf, r2
+
+    # set the stack pointer, sp register is banked, so we need to switch mode
+    mov     sp, r1
+
+    # switch back to the SVC mode
+    bic     r2, r2, #MODE_MASK
+    orr     r2, r2, #SVC_MODE
+    msr     cpsr_cxsf, r2
+
+    # return
+    bx      lr
+
+get_fp:
+    MOV     r0, fp
+    bx      lr
