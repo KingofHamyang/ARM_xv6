@@ -41,7 +41,7 @@ rule _qemu_gdb
   pool = console
 
 rule _gdb
-  command = echo 'Type `target remote :!12345` for debugging.' && $gdb -q $in
+  command = echo 'Type `target remote :12345` for debugging.' && $gdb -q $in
   pool = console
 
 rule show_dep_graph
