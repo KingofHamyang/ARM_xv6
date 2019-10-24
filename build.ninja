@@ -34,7 +34,14 @@ rule dump
   command = $objdump -S $in > $out
 
 rule _qemu
-  command = $qemu $qemuopts $extra -kernel $in
+  command = echo 'Hit Ctrl + A, then press X to exit...' && $qemu $qemuopts $extra -kernel $in
+  pool = console
+rule _qemu_gdb
+  command = echo 'Run `ninja gdb` in another console.' && $qemu $qemuopts $extra -kernel $in
+  pool = console
+
+rule _gdb
+  command = echo 'Type `target remote :!12345` for debugging.' && $gdb -q $in
   pool = console
 rule _qemu_gdb
   command = echo 'Run `ninja gdb` in another console.\n' && $qemu $qemuopts $extra -kernel $in
