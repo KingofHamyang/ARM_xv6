@@ -47,26 +47,58 @@
 #ifndef __ASSEMBLER__
 #include "memlayout.h"
 
+#define dmb() __asm__ __volatile__ ("dmb":::"memory")
+
+// Some gcc ignore inline; so force inline it.
+static inline uint strex(volatile uint *, uint) __attribute__((always_inline));
+static inline uint ldrex(volatile uint *) __attribute__((always_inline));
+static inline uint xchg(volatile uint *, uint) __attribute__((always_inline));
+
 static void cli(void) {
 	uint val;
 
-	__asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
+	__asm__ __volatile__ (
+		"mrs %0, cpsr"
+			: "=r"(val)
+			:
+			:
+	);
 	val |= DIS_INT;
-	__asm__ __volatile__ ("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
+	__asm__ __volatile__ (
+		"msr cpsr_cxsf, %0"
+			:
+			: "r"(val)
+			:
+	);
 }
 
 static void sti(void) {
 	uint val;
 
-	__asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
+	__asm__ __volatile__ (
+		"mrs %0, cpsr"
+			: "=r"(val)
+			:
+			:
+	);
 	val &= ~DIS_INT;
-	__asm__ __volatile__ ("msr cpsr_cxsf, %[v]": :[v]"r" (val):);
+	__asm__ __volatile__ (
+		"msr cpsr_cxsf, %0"
+			:
+			: "r"(val)
+			:
+	);
 }
 
 static uint spsr_usr() {
 	uint val;
 
-    __asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
+    __asm__ __volatile__ (
+		"mrs %0, cpsr"
+			: "=r"(val)
+			:
+			:
+	);
     val &= ~MODE_MASK;
     val |= USR_MODE;
 
@@ -76,9 +108,58 @@ static uint spsr_usr() {
 static inline int int_enabled() {
 	uint val;
 
-	__asm__ __volatile__ ("mrs %[v], cpsr": [v]"=r" (val)::);
+	__asm__ __volatile__ (
+		"mrs %0, cpsr"
+			: "=r"(val)
+			:
+			:
+	);
 
 	return !(val & DIS_INT);
+}
+
+static inline uint ldrex(volatile uint *addr) {
+	// Load link.
+	uint res;
+
+	__asm__ __volatile__ (
+		"ldrex  %0, [%1]\n"
+			: "=&r"(res)
+			: "r"(addr)
+			: "memory","cc"
+	);
+	return res;
+}
+
+static inline uint strex(volatile uint *addr, uint newval) {
+	// Load link.
+	uint res;
+
+	__asm__ __volatile__ (
+		"    strex  %0, %1, [%2]\n"
+			: "=&r"(res)
+			: "r"(newval), "r"(addr)
+			: "memory","cc"
+	);
+	return res;
+}
+
+static inline uint xchg(volatile uint *addr, uint newval) {
+	// reference:
+	// https://github.com/torvalds/linux/blob/master/arch/arm/include/asm/atomic.h
+	// https://github.com/torvalds/linux/blob/master/arch/arm/include/asm/cmpxchg.h
+	uint res, tmp;
+
+	__asm__ __volatile__ (
+		"1:  ldrex  %0, [%3]\n"
+		"    strex  %1, %2, [%3]\n"
+		"    cmp    %1, #0\n"
+		"    bne    1b"
+			: "=&r"(res), "=&r"(tmp)
+			: "r"(newval), "r"(addr)
+			: "memory","cc"
+	);
+	return res;
 }
 
 struct trapframe {
