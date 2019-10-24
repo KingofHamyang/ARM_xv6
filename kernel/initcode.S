@@ -6,15 +6,15 @@
 
 # exec(init, argv)
 start:
-    LDR     r1, =init
-    LDR     r2, =argv
-    MOV     r0, #SYS_exec
-    SWI     0x00
+    ldr     r1, =init
+    ldr     r2, =argv
+    mov     r0, #SYS_exec
+    swi     0x00
 
 exit:
-    MOV     r0, #SYS_exit
-    SWI     0x00
-    B       exit
+    mov     r0, #SYS_exit
+    swi     0x00
+    b       exit
 
 # char init[] = "/init\0";
 init:

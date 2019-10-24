@@ -52,8 +52,7 @@ static void kpt_free (char *v) {
 }
 
 // add some memory used for page tables (initialization code)
-void kpt_freerange(uint low, uint hi)
-{
+void kpt_freerange(uint low, uint hi) {
     while (low < hi) {
         _kpt_free ((char*)low);
         low += PT_SZ;
@@ -148,11 +147,11 @@ static int mappages(pde_t *pgdir, void *va, uint size, uint pa, int ap)
 static void flush_tlb(void)
 {
     uint val = 0;
-    __asm__ __volatile__ ("MCR p15, 0, %[r], c8, c7, 0" : :[r]"r" (val):);
+    __asm__ __volatile__ ("mcr p15, 0, %0, c8, c7, 0" : : "r"(val):);
 
     // invalid entire data and instruction cache
-    __asm__ __volatile__ ("MCR p15,0,%[r],c7,c10,0": :[r]"r" (val):);
-    __asm__ __volatile__ ("MCR p15,0,%[r],c7,c11,0": :[r]"r" (val):);
+    __asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 0": : "r"(val):);
+    __asm__ __volatile__ ("mcr p15, 0, %0, c7, c11, 0": : "r"(val):);
 }
 
 // Switch to the user page table (TTBR0)
@@ -168,7 +167,7 @@ void switchuvm (struct proc *p)
 
     val = (uint) V2P(p->pgdir) | 0x00;
 
-    __asm__ __volatile__ ("MCR p15, 0, %[v], c2, c0, 0": :[v]"r" (val):);
+    __asm__ __volatile__ ("mcr p15, 0, %0, c2, c0, 0": : "r"(val):);
     flush_tlb();
 
     popcli();
