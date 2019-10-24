@@ -15,6 +15,6 @@
 
 #define HZ           10
 
-#define STACK_DEPTH  32
+#define STACK_DEPTH  15
 
 #endif
