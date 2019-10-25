@@ -6,12 +6,11 @@
 #include "proc.h"
 
 // trap routine
-void swi_handler (struct trapframe *r)
-{
+void swi_handler (struct trapframe *r) {
     if (proc->killed)
         exit();
     proc->tf = r;
-    syscall ();
+    syscall();
     if (proc->killed)
         exit();
 }
@@ -29,8 +28,7 @@ void irq_handler (struct trapframe *r)
 }
 
 // trap routine
-void reset_handler (struct trapframe *r)
-{
+void reset_handler (struct trapframe *r) {
     cli();
     cprintf ("reset at: 0x%x \n", r->pc);
 }
@@ -43,8 +41,7 @@ void und_handler (struct trapframe *r)
 }
 
 // trap routine
-void dabort_handler (struct trapframe *r)
-{
+void dabort_handler (struct trapframe *r) {
     uint ifs, dfs;
     uint ifa, dfa;
 
@@ -60,13 +57,13 @@ void dabort_handler (struct trapframe *r)
     __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
     __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);
     __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(dfa)::);
-    
+
     cli();
     cprintf ("data abort: inst 0x%x,\n"
              "data fault at 0x%x, status 0x%x \n"
              "inst       at 0x%x, status 0x%x \n",
              r->pc, dfa, dfs, ifa, ifs);
-    
+
     dump_trapframe (r);
 }
 
@@ -75,9 +72,9 @@ void iabort_handler (struct trapframe *r)
 {
     uint ifs, dfs;
     uint ifa, dfa;
-    
+
     // read fault status register
-    // 얘 레퍼런스 잘못 본 거 같은데 
+    // 얘 레퍼런스 잘못 본 거 같은데
     __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 1": "=r"(ifs)::);
     __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
     __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);

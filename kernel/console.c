@@ -157,7 +157,7 @@ void consoleintr (int (*getc) (void))
 
     while ((c = getc()) >= 0) {
         switch (c) {
-        case C('P'):  // Process listing.
+        case C('L'):  // Process listing.
             procdump();
             break;
 

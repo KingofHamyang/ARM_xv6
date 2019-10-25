@@ -76,7 +76,6 @@ void bootmain(void) {
 	}
 	set_bootpgtbl(VEC_TBL, 0, 1 << PDE_SHIFT, 0);
 	set_bootpgtbl(KERNBASE+DEVBASE, DEVBASE, DEV_MEM_SZ, 1);
-	_puts("Success!!!!\n");
 	load_pgtbl(kern_table, user_table);
 	jump_stack();
 	clear_bss();
