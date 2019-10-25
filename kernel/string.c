@@ -2,141 +2,141 @@
 #include "arm.h"
 
 void* memset(void *dst, int v, uint n) {
-    uchar	*p;
-    uchar	c;
-    uint	val;
-    uint	*p4;
+	uchar	*p;
+	uchar	c;
+	uint	val;
+	uint	*p4;
 
-    p   = dst;
-    c   = v & 0xff;
-    val = (c << 24) | (c << 16) | (c << 8) | c;
+	p   = dst;
+	c   = v & 0xff;
+	val = (c << 24) | (c << 16) | (c << 8) | c;
 
-    // set bytes before whole uint
-    for (; (n > 0) && ((uint)p % 4); n--, p++) {
-        *p = c;
-    }
+	// set bytes before whole uint
+	for (; (n > 0) && ((uint)p % 4); n--, p++) {
+		*p = c;
+	}
 
-    // set memory 4 bytes a time
-    p4 = (uint*)p;
+	// set memory 4 bytes a time
+	p4 = (uint*)p;
 
-    for (; n >= 4; n -= 4, p4++) {
-        *p4 = val;
-    }
+	for (; n >= 4; n -= 4, p4++) {
+		*p4 = val;
+	}
 
-    // set leftover one byte a time
-    p = (uchar*)p4;
+	// set leftover one byte a time
+	p = (uchar*)p4;
 
-    for (; n > 0; n--, p++) {
-        *p = c;
-    }
+	for (; n > 0; n--, p++) {
+		*p = c;
+	}
 
-    return dst;
+	return dst;
 }
 
 
 int memcmp(const void *v1, const void *v2, uint n)
 {
-    const uchar *s1, *s2;
+	const uchar *s1, *s2;
 
-    s1 = v1;
-    s2 = v2;
+	s1 = v1;
+	s2 = v2;
 
-    while (n-- > 0) {
-        if (*s1 != *s2) {
-            return *s1 - *s2;
-        }
+	while (n-- > 0) {
+		if (*s1 != *s2) {
+			return *s1 - *s2;
+		}
 
-        s1++, s2++;
-    }
+		s1++, s2++;
+	}
 
-    return 0;
+	return 0;
 }
 
 void* memmove(void *dst, const void *src, uint n)
 {
-    const char *s;
-    char *d;
+	const char *s;
+	char *d;
 
-    s = src;
-    d = dst;
+	s = src;
+	d = dst;
 
-    if (s < d && s + n > d) {
-        s += n;
-        d += n;
+	if (s < d && s + n > d) {
+		s += n;
+		d += n;
 
-        while (n-- > 0) {
-            *--d = *--s;
-        }
+		while (n-- > 0) {
+			*--d = *--s;
+		}
 
-    } else {
-        while (n-- > 0) {
-            *d++ = *s++;
-        }
-    }
+	} else {
+		while (n-- > 0) {
+			*d++ = *s++;
+		}
+	}
 
-    return dst;
+	return dst;
 }
 
 // memcpy exists to placate GCC.  Use memmove.
 void* memcpy(void *dst, const void *src, uint n)
 {
-    return memmove(dst, src, n);
+	return memmove(dst, src, n);
 }
 
 int strncmp(const char *p, const char *q, uint n)
 {
-    while (n > 0 && *p && *p == *q) {
-        n--, p++, q++;
-    }
+	while (n > 0 && *p && *p == *q) {
+		n--, p++, q++;
+	}
 
-    if (n == 0) {
-        return 0;
-    }
+	if (n == 0) {
+		return 0;
+	}
 
-    return (uchar)*p - (uchar)*q;
+	return (uchar)*p - (uchar)*q;
 }
 
 char* strncpy(char *s, const char *t, int n)
 {
-    char *os;
+	char *os;
 
-    os = s;
+	os = s;
 
-    while (n-- > 0 && (*s++ = *t++) != 0)
-        ;
+	while (n-- > 0 && (*s++ = *t++) != 0)
+		;
 
-    while (n-- > 0) {
-        *s++ = 0;
-    }
+	while (n-- > 0) {
+		*s++ = 0;
+	}
 
-    return os;
+	return os;
 }
 
 // Like strncpy but guaranteed to NUL-terminate.
 char* safestrcpy(char *s, const char *t, int n)
 {
-    char *os;
+	char *os;
 
-    os = s;
+	os = s;
 
-    if (n <= 0) {
-        return os;
-    }
+	if (n <= 0) {
+		return os;
+	}
 
-    while (--n > 0 && (*s++ = *t++) != 0)
-        ;
+	while (--n > 0 && (*s++ = *t++) != 0)
+		;
 
-    *s = 0;
-    return os;
+	*s = 0;
+	return os;
 }
 
 int strlen(const char *s)
 {
-    int n;
+	int n;
 
-    for (n = 0; s[n]; n++)
-        ;
+	for (n = 0; s[n]; n++)
+		;
 
-    return n;
+	return n;
 }
 

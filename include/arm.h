@@ -93,16 +93,16 @@ static void sti(void) {
 static uint spsr_usr() {
 	uint val;
 
-    __asm__ __volatile__ (
+	__asm__ __volatile__ (
 		"mrs %0, cpsr"
 			: "=r"(val)
 			:
 			:
 	);
-    val &= ~MODE_MASK;
-    val |= USR_MODE;
+	val &= ~MODE_MASK;
+	val |= USR_MODE;
 
-    return val;
+	return val;
 }
 
 static inline int int_enabled() {

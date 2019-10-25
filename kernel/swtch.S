@@ -8,18 +8,18 @@
 .global swtch
 
 swtch:
-    stmfd   r13!, {r4-r12, lr}  // push svc r4-r12, lr to the stack
+	stmfd   r13!, {r4-r12, lr}  // push svc r4-r12, lr to the stack
 
-    # switch the stack
-    str     r13, [r0]           // save current sp to the old PCB (**old)
-    mov     r13, r1             // load the next stack
+	# switch the stack
+	str     r13, [r0]           // save current sp to the old PCB (**old)
+	mov     r13, r1             // load the next stack
 
-    # load the new registers. pc_usr is not restored here because
-    # LDMFD^ will switch mode if pc_usr is loaded. We just simply
-    # pop it out as pc_usr is saved on the stack, and will be loaded
-    # when we return from kernel to user space (swi or interrupt return)
+	# load the new registers. pc_usr is not restored here because
+	# LDMFD^ will switch mode if pc_usr is loaded. We just simply
+	# pop it out as pc_usr is saved on the stack, and will be loaded
+	# when we return from kernel to user space (swi or interrupt return)
 
-    ldmfd   r13!, {r4-r12, lr}  // pop svc r4-r12, lr
+	ldmfd   r13!, {r4-r12, lr}  // pop svc r4-r12, lr
 
-    # return to the caller
-    bx      lr
+	# return to the caller
+	bx      lr

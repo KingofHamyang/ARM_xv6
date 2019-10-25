@@ -30,43 +30,43 @@ static volatile uint *ubase;
 void isr_uart(struct trapframe *tf, int idx);
 
 void uart_init (void *addr) {
-    // enable uart
-    uint left;
+	// enable uart
+	uint left;
 
-    ubase = addr;
-    left = UART_CLK % (16 * UART_BITRATE);
-    // set the bit rate: integer/fractional baud rate registers
-    ubase[UART_IBRD] = UART_CLK / (16 * UART_BITRATE);
-    ubase[UART_FBRD] = (left * 4 + UART_BITRATE / 2) / UART_BITRATE;
+	ubase = addr;
+	left = UART_CLK % (16 * UART_BITRATE);
+	// set the bit rate: integer/fractional baud rate registers
+	ubase[UART_IBRD] = UART_CLK / (16 * UART_BITRATE);
+	ubase[UART_FBRD] = (left * 4 + UART_BITRATE / 2) / UART_BITRATE;
 
-    // enable trasmit and receive
-    ubase[UART_CR] |= (UARTCR_EN | UARTCR_RXE | UARTCR_TXE);
+	// enable trasmit and receive
+	ubase[UART_CR] |= (UARTCR_EN | UARTCR_RXE | UARTCR_TXE);
 
-    // enable FIFO
-    ubase[UART_LCR] |= UARTLCR_FEN;
+	// enable FIFO
+	ubase[UART_LCR] |= UARTLCR_FEN;
 }
 
 void uart_enable_rx () {
-    // enable the receive (interrupt)
-    // for uart (after PIC has initialized)
-    ubase[UART_IMSC] = UART_RXI;
-    pic_enable(PIC_UART0, isr_uart);
+	// enable the receive (interrupt)
+	// for uart (after PIC has initialized)
+	ubase[UART_IMSC] = UART_RXI;
+	pic_enable(PIC_UART0, isr_uart);
 }
 
 void uartputc(int c) {
-    // wait a short period if the transmit FIFO is full
-    while (ubase[UART_FR] & UARTFR_TXFF)
-        micro_delay(10);
-    ubase[UART_DR] = c;
+	// wait a short period if the transmit FIFO is full
+	while (ubase[UART_FR] & UARTFR_TXFF)
+		micro_delay(10);
+	ubase[UART_DR] = c;
 }
 
 //poll the UART for data
 int uartgetc (void) {
-    if (ubase[UART_FR] & UARTFR_RXFE) return -1;
-    return ubase[UART_DR];
+	if (ubase[UART_FR] & UARTFR_RXFE) return -1;
+	return ubase[UART_DR];
 }
 
 void isr_uart(struct trapframe *tf, int idx) {
-    if (ubase[UART_MIS] & UART_RXI) consoleintr(uartgetc);
-    ubase[UART_ICR] = UART_RXI | UART_TXI;
+	if (ubase[UART_MIS] & UART_RXI) consoleintr(uartgetc);
+	ubase[UART_ICR] = UART_RXI | UART_TXI;
 }
