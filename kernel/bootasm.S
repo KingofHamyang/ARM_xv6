@@ -18,7 +18,7 @@ _start:
 	ldr sp, =svc_stack
 
 	bl bootmain
-    b .
+	b .
 
 jump_stack:
 /*

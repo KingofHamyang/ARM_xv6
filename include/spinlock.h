@@ -2,12 +2,12 @@
 #define _SPINLOCK_H_
 
 struct spinlock { // Mutex.
-    uint         locked;     // Is the lock held?
+	uint         locked;     // Is the lock held?
 
-    // For debugging:
-    char *       name;       // Name of lock.
-    struct cpu * cpu;        // The cpu holding the lock.
-    uint         pcs[STACK_DEPTH];    // The call stack (an array of program counters)
+	// For debugging:
+	char *       name;       // Name of lock.
+	struct cpu * cpu;        // The cpu holding the lock.
+	uint         pcs[STACK_DEPTH];    // The call stack (an array of program counters)
 };
 
 #endif

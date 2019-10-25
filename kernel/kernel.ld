@@ -25,7 +25,7 @@ SECTIONS
 
 		out/bootasm.o(.bss .bss.* COMMON)
 		out/bootmain.o(.bss .bss.* COMMON)
-		
+
 		/* stack for booting code. */
 		. = ALIGN(0x1000);
 		. += BOOT_STACK_SIZE;
