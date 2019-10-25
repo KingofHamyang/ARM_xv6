@@ -26,6 +26,16 @@ $ ninja qemu
 ```
 (You don't need to build first, `ninja` will automatically detect build state and build if need.)
 
+run this command if you want to clean previous build:
+```
+$ ninja -t clean
+```
+
+if you want to force clean, just remove `out/` directory:
+```
+$ rm -rf out/
+```
+
 ## How can I debug this?
 
 You need two terminal windows. (`tmux` or `screen` also works.)
@@ -51,3 +61,14 @@ You can now use gdb as debugger.
 2. Type `b (function_name)` to set breakpoint in kernel source code.
 3. Type `file out/(user_exec_file)`, `b main`, `c` for debugging user space executables. (Don't forget to type `file out/kernel.elf` to return kernel debugging!)
 4. Type `watch (variable)` to set breakpoint variable value change, or `watch (condition)` to set breakpoint when given `condition` fits during running.
+
+## How can I see dependency graph?
+
+`ninja` can show dependency graph using `graphviz` for given target.
+
+1. If you want to see it, you need to install `graphviz` package.
+2. Then, type `ninja graph.png` for see  dep. graph for `kernel.elf`.
+3. If you want to see other dependency graph, run this command:
+```
+$ ninja -t graph (target) | dot -Tpng -o (output_png_file_name)
+```
