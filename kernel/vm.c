@@ -16,7 +16,7 @@ pde_t *kpgdir;  // for use in scheduler()
 // user address) have a size of 1KB. kpt_alloc/free is used
 // as a wrapper to support allocating page tables during boot
 // (use the initial kernel map, and during runtime, use buddy
-// memory allocator. 
+// memory allocator.
 struct run {
     struct run *next;
 };
@@ -62,9 +62,9 @@ void kpt_freerange(uint low, uint hi) {
 void* kpt_alloc(void)
 {
     struct run *r;
-    
+
     acquire(&kpt_mem.lock);
-    
+
     if ((r = kpt_mem.freelist) != NULL ) {
         kpt_mem.freelist = r->next;
     }
@@ -257,8 +257,7 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
-int deallocuvm (pde_t *pgdir, uint oldsz, uint newsz)
-{
+int deallocuvm (pde_t *pgdir, uint oldsz, uint newsz) {
     pte_t *pte;
     uint a;
     uint pa;

@@ -7,7 +7,7 @@ rule initcode_link
 rule initcode_objcopy
   command = $objcopy -S -O binary --prefix-symbols="_binary_$in" $in $out
 
-build $builddir/binary.o: c_compile kernel/binary.S | $builddir/fs.img $builddir/initcode
+build $builddir/binary.o: c_compile kernel/binary.S | fs.img $builddir/initcode
 build $builddir/bio.o: c_compile kernel/bio.c
 build $builddir/bootasm.o: c_compile kernel/bootasm.S
 build $builddir/bootmain.o: c_compile kernel/bootmain.c

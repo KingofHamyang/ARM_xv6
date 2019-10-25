@@ -9,10 +9,12 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define MULTICORE 0
+
 void initlock(struct spinlock *lk, char *name) {
-    lk->name = name;
-    lk->locked = 0;
-    lk->cpu = 0;
+	lk->name = name;
+	lk->locked = 0;
+	lk->cpu = 0;
 }
 
 // Acquire the lock.
@@ -20,44 +22,51 @@ void initlock(struct spinlock *lk, char *name) {
 // Holding a lock for a long time may cause
 // other CPUs to waste time spinning to acquire it.
 void acquire(struct spinlock *lk) {
-    pushcli(); // disable interrupts to avoid deadlock.
-    if (holding(lk)) panic("acquire");
+	pushcli(); // disable interrupts to avoid deadlock.
+	if (holding(lk)) cprintf("acquire: something is wrong... %d\n", lk->locked);
+#if MULTICORE  // multi-core features.
+	if (holding(lk)) panic("acquire");
 
-    while (xchg(&lk->locked, 1) != 0);
+	while (xchg(&lk->locked, 1) != 0);
 
-    // Tell the C compiler and the processor to not move loads or stores
-    // past this point, to ensure that the critical section's memory
-    // references happen after the lock is acquired.
-    dmb(); // __sync_synchronize() is deprecated.
-
-    // Record info about lock acquisition for debugging.
-    lk->cpu = cpu;
-    getcallerpcs(get_fp(), lk->pcs);
+	// Tell the C compiler and the processor to not move loads or stores
+	// past this point, to ensure that the critical section's memory
+	// references happen after the lock is acquired.
+	dmb(); // __sync_synchronize() is deprecated.
+#else
+	// Record info about lock acquisition for debugging.
+	lk->locked = 1;
+#endif
+	lk->cpu = cpu;
+	getcallerpcs(get_fp(), lk->pcs);
 }
 
 // Release the lock.
 void release(struct spinlock *lk) {
-    uint tmp;
+	uint tmp;
 
-    if(!holding(lk))
-        panic("release");
+	if (!holding(lk)) cprintf("release: something is wrong... %d\n", lk->locked);
+#if MULTICORE  // multi-core features.
+	if(!holding(lk)) panic("release");
 
-    lk->pcs[0] = 0;
-    lk->cpu = 0;
+	// Tell the C compiler and the processor to not move loads or stores
+	// past this point, to ensure that all the stores in the critical
+	// section are visible to other cores before the lock is released.
+	// Both the C compiler and the hardware may re-order loads and
+	// stores; __sync_synchronize() tells them both not to.
+	dmb(); // __sync_synchronize() is deprecated.
 
-    // Tell the C compiler and the processor to not move loads or stores
-    // past this point, to ensure that all the stores in the critical
-    // section are visible to other cores before the lock is released.
-    // Both the C compiler and the hardware may re-order loads and
-    // stores; __sync_synchronize() tells them both not to.
-    dmb(); // __sync_synchronize() is deprecated.
+	// Release the lock, equivalent to lk->locked = 0.
+	// This code can't use a C assignment, since it might
+	// not be atomic. A real OS would use C atomics here.
+	lk->locked = 0; // 뭐 어쩔건데 걍 대입해...
+#else
+	lk->locked = 0;
+#endif
+	lk->pcs[0] = 0;
+	lk->cpu = 0;
 
-    // Release the lock, equivalent to lk->locked = 0.
-    // This code can't use a C assignment, since it might
-    // not be atomic. A real OS would use C atomics here.
-    lk->locked = 0; // 뭐 어쩔건데 걍 대입해...
-
-    popcli();
+	popcli();
 }
 
 // Record the current call stack in pcs[] by following the call chain.
@@ -65,71 +74,67 @@ void release(struct spinlock *lk) {
 //		push	{fp, lr}
 //		add		fp, sp, #4
 // so, fp points to lr, the return address
-void getcallerpcs (void * v, uint pcs[])
-{
-    uint *fp;
-    int i;
+void getcallerpcs (void * v, uint pcs[]) {
+	uint *fp;
+	int i;
 
-    fp = (uint *) v;
+	fp = (uint *) v;
 
-    for (i = 0; i < STACK_DEPTH; i++) {
-        if (fp == 0 ||
-            // fp < (uint *) KERNBASE ||
-            fp == (uint *) 0xFFFFFFFF) break;
+	for (i = 0; i < STACK_DEPTH; i++) {
+		if (fp == 0 ||
+			fp < (uint *) KERNBASE ||
+			fp == (uint *) 0xFFFFFFFF) break;
 
-        fp -= 1;			      // points fp to the saved fp
-        pcs[i] = fp[1];           // saved lr
-        fp = (uint *) fp[0];      // saved fp
-    }
+		fp -= 1;			      // points fp to the saved fp
+		pcs[i] = fp[1];           // saved lr
+		fp = (uint *) fp[0];      // saved fp
+	}
 
-    for (; i < STACK_DEPTH; i++) {
-        pcs[i] = 0;
-    }
+	for (; i < STACK_DEPTH; i++) pcs[i] = 0;
 }
 
-void show_callstk(char *s)
-{
-    int i;
-    uint pcs[STACK_DEPTH];
+void show_callstk(char *s) {
+	int i;
+	uint pcs[STACK_DEPTH];
 
-    cprintf("%s\n", s);
+	cprintf("%s\n", s);
 
-    getcallerpcs(get_fp(), pcs);
+	getcallerpcs(get_fp(), pcs);
 
-    for (i = 0; i < STACK_DEPTH && pcs[i]; i++)
-        cprintf("STACK #%d: 0x%x\n", i + 1, pcs[i]);
+	for (i = 0; i < STACK_DEPTH && pcs[i]; i++)
+		cprintf("STACK #%d: 0x%x\n", i + 1, pcs[i]);
 }
 
 // Check whether this cpu is holding the lock.
 int holding(struct spinlock *lock) {
-    return lock->locked; // && lock->cpu == cpus;
+#if MULTICORE
+	return lock->locked && lock->cpu == cpus;
+#else
+	return lock->locked;
+#endif
 }
 
-void pushcli (void)
-{
-    int enabled;
+void pushcli (void) {
+	int enabled;
 
-    enabled = int_enabled();
+	enabled = int_enabled();
 
-    cli();
+	cli();
 
-    if (cpu->ncli++ == 0) {
-        cpu->intena = enabled;
-    }
+	if (cpu->ncli++ == 0)
+		cpu->intena = enabled;
 }
 
 void popcli (void)
 {
-    if (int_enabled()) {
-        panic("popcli - interruptible");
-    }
+	if (int_enabled())
+		panic("popcli - interruptible");
 
-    if (--cpu->ncli < 0) {
-        cprintf("cpu (%d)->ncli: %d\n", cpu, cpu->ncli);
-        panic("popcli -- ncli < 0");
-    }
+	if (--cpu->ncli < 0) {
+		cprintf("cpu (%d)->ncli: %d\n", cpu, cpu->ncli);
+		panic("popcli -- ncli < 0");
+	}
 
-    if ((cpu->ncli == 0) && cpu->intena) {
-        sti();
-    }
+	if (!(cpu->ncli) && cpu->intena)
+		sti();
 }

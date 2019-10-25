@@ -4,8 +4,11 @@ rule user_link
 rule forktest_link
   command = $cc $user_ldflags -e main -o $out $in $builddir/ulib.o $builddir/usys.o && $objdump -S $builddir/_forktest > $builddir/forktest.asm
 
+rule usertests_link
+  command = $cc $ldflags -e main -o $out $in $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
+
 rule mkfs_img
-  command = ./tools/mkfs $out $in && $objdump -S $builddir/usys.o > $builddir/usys.asm
+  command = cd out && ../tools/mkfs $out _cat _echo _forktest _grep _init _kill _ln _ls _mkdir _rm _sh _stressfs _usertests _wc _zombie && cd .. && $objdump -S $builddir/usys.o > $builddir/usys.asm
 
 # If you want to add your user program, add line like this.
 # build $builddir/[your_program].o: c_compile user/[your_program].c
@@ -22,6 +25,7 @@ build $builddir/mkdir.o: c_compile user/mkdir.c
 build $builddir/rm.o: c_compile user/rm.c
 build $builddir/sh.o: c_compile user/sh.c
 build $builddir/stressfs.o: c_compile user/stressfs.c
+build $builddir/usertests.o: c_compile user/usertests.c
 build $builddir/wc.o: c_compile user/wc.c
 build $builddir/zombie.o: c_compile user/zombie.c
 build $builddir/_cat: user_link $builddir/cat.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
@@ -36,8 +40,9 @@ build $builddir/_mkdir: user_link $builddir/mkdir.o | $builddir/ulib.o $builddir
 build $builddir/_rm: user_link $builddir/rm.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 build $builddir/_sh: user_link $builddir/sh.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 build $builddir/_stressfs: user_link $builddir/stressfs.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
+build $builddir/_usertests: usertests_link $builddir/usertests.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 build $builddir/_wc: user_link $builddir/wc.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 build $builddir/_zombie: user_link $builddir/zombie.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 # Also, don't forget insert your program into fs.img!
 
-build $builddir/fs.img: mkfs_img $builddir/_cat $builddir/_echo $builddir/_forktest $builddir/_grep $builddir/_init $builddir/_kill $builddir/_ln $builddir/_ls $builddir/_mkdir $builddir/_rm $builddir/_sh $builddir/_stressfs $builddir/_wc $builddir/_zombie | tools/mkfs
+build fs.img: mkfs_img | tools/mkfs $builddir/_cat $builddir/_echo $builddir/_forktest $builddir/_grep $builddir/_init $builddir/_kill $builddir/_ln $builddir/_ls $builddir/_mkdir $builddir/_rm $builddir/_sh $builddir/_stressfs $builddir/_usertests $builddir/_wc $builddir/_zombie
