@@ -117,7 +117,7 @@ int holding(struct spinlock *lock) {
 void pushcli (void) {
 	int enabled;
 
-	enabled = int_enabled();
+	enabled = is_int();
 
 	cli();
 
@@ -127,7 +127,7 @@ void pushcli (void) {
 
 void popcli (void)
 {
-	if (int_enabled())
+	if (is_int())
 		panic("popcli - interruptible");
 
 	if (--cpu->ncli < 0) {
