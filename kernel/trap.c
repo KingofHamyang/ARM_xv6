@@ -23,7 +23,6 @@ void irq_handler (struct trapframe *r)
 	if (proc != NULL) {
 		proc->tf = r;
 	}
-
 	pic_dispatch (r);
 }
 
@@ -31,6 +30,7 @@ void irq_handler (struct trapframe *r)
 void reset_handler (struct trapframe *r) {
 	cli();
 	cprintf ("reset at: 0x%x \n", r->pc);
+	panic("reset - you reset the pc!\n");
 }
 
 // trap routine
@@ -38,54 +38,53 @@ void und_handler (struct trapframe *r)
 {
 	cli();
 	cprintf ("und at: 0x%x \n", r->pc);
+	panic("undefined exception\n");
 }
 
 // trap routine
 void dabort_handler (struct trapframe *r) {
-	uint ifs, dfs;
-	uint ifa, dfa;
+	uint dfs, dfa;
 
-
-	// 얘 레퍼런스 잘못 본 거 같은데
-	// read data fault status register
-	// __asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
-
-	// read the fault address register
-	// __asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(fa)::);
-
-	__asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 1": "=r"(ifs)::);
 	__asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
-	__asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);
 	__asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(dfa)::);
 
 	cli();
 	cprintf ("data abort: inst 0x%x,\n"
-			 "data fault at 0x%x, status 0x%x \n"
-			 "inst       at 0x%x, status 0x%x \n",
-			 r->pc, dfa, dfs, ifa, ifs);
+			 "data fault at 0x%x, status 0x%x \n",
+			 r->pc, dfa, dfs);
 
 	dump_trapframe (r);
+	if (r->pc < KERNBASE) {
+		// This instruction is from User program. exit...
+		exit();
+	} else {
+		// This instruction is from Kernel.
+		panic("data abort exception");
+	}
 }
 
 // trap routine
 void iabort_handler (struct trapframe *r)
 {
-	uint ifs, dfs;
-	uint ifa, dfa;
+	uint ifs, ifa;
 
 	// read fault status register
 	// 얘 레퍼런스 잘못 본 거 같은데
 	__asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 1": "=r"(ifs)::);
-	__asm__ __volatile__ ("mrc p15, 0, %0, c5, c0, 0": "=r"(dfs)::);
 	__asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);
-	__asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(dfa)::);
 
 	cli();
 	cprintf ("inst prefetch abort: inst 0x%x,\n"
-			 "data fault at 0x%x, status 0x%x \n"
 			 "inst       at 0x%x, status 0x%x \n",
-			 r->pc, dfa, dfs, ifa, ifs);
+			 r->pc, ifa, ifs);
 	dump_trapframe (r);
+	if (r->pc < KERNBASE) {
+		// This instruction is from User program. exit...
+		exit();
+	} else {
+		// This instruction is from Kernel.
+		panic("inst. prefetch abort exception");
+	}
 }
 
 // trap routine
@@ -93,6 +92,7 @@ void na_handler (struct trapframe *r)
 {
 	cli();
 	cprintf ("n/a at: 0x%x \n", r->pc);
+	panic("reserved exception");
 }
 
 // trap routine
@@ -100,11 +100,12 @@ void fiq_handler (struct trapframe *r)
 {
 	cli();
 	cprintf ("fiq at: 0x%x \n", r->pc);
+	panic("fiq exception - fiq not implemented, sorry!");
 }
 
 // low-level init code: in real hardware, lower memory is usually mapped
 // to flash during startup, we need to remap it to SDRAM
-void trap_init ( )
+void trap_init ()
 {
 	volatile uint *ram_start;
 	char *stk;
