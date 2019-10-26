@@ -24,6 +24,7 @@
 // between two processes, but instead, between the scheduler. Think of scheduler
 // as the idle process.
 //
+
 struct {
 	struct spinlock lock;
 	struct proc proc[NPROC];
@@ -58,15 +59,15 @@ static struct proc* allocproc(void)
 		if(p->state == UNUSED) {
 			goto found;
 		}
-
 	}
 
 	release(&ptable.lock);
 	return 0;
 
-	found:
+found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
+
 	release(&ptable.lock);
 
 	// Allocate kernel stack.
@@ -143,7 +144,9 @@ void userinit(void)
 	safestrcpy(p->name, "initcode", sizeof(p->name));
 	p->cwd = namei("/");
 
+	acquire(&ptable.lock);
 	p->state = RUNNABLE;
+	release(&ptable.lock);
 }
 
 // Grow current process's memory by n bytes.
@@ -177,11 +180,13 @@ int growproc(int n)
 int fork(void) {
 	int i, pid;
 	struct proc *np;
+	struct proc *curproc = proc;
 
 	// Allocate process.
 	if((np = allocproc()) == 0) {
 		return -1;
 	}
+	pid = np->pid;
 
 	// Copy process state from p.
 	if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
@@ -203,12 +208,13 @@ int fork(void) {
 			np->ofile[i] = filedup(proc->ofile[i]);
 		}
 	}
-
 	np->cwd = idup(proc->cwd);
 
-	pid = np->pid;
-	np->state = RUNNABLE;
 	safestrcpy(np->name, proc->name, sizeof(proc->name));
+
+	acquire(&ptable.lock);
+	np->state = RUNNABLE;
+	release(&ptable.lock);
 
 	return pid;
 }
@@ -232,8 +238,10 @@ void exit(void)
 			proc->ofile[fd] = 0;
 		}
 	}
-
+	begin_trans();
 	iput(proc->cwd);
+	commit_trans();
+
 	proc->cwd = 0;
 
 	acquire(&ptable.lock);
@@ -255,7 +263,6 @@ void exit(void)
 	// Jump into the scheduler, never to return.
 	proc->state = ZOMBIE;
 	sched();
-
 	panic("zombie exit");
 }
 
@@ -291,7 +298,6 @@ int wait(void)
 				p->name[0] = 0;
 				p->killed = 0;
 				release(&ptable.lock);
-
 				return pid;
 			}
 		}
@@ -364,7 +370,7 @@ void sched(void) {
 	if(proc->state == RUNNING)
 		panic("sched running");
 
-	if(is_int ())
+	if(is_int())
 		panic("sched interruptible");
 
 	intena = cpu->intena;
