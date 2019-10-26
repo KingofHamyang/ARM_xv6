@@ -23,9 +23,11 @@ void initlock(struct spinlock *lk, char *name) {
 // other CPUs to waste time spinning to acquire it.
 void acquire(struct spinlock *lk) {
 	pushcli(); // disable interrupts to avoid deadlock.
-	if (holding(lk)) cprintf("acquire: something is wrong... %d\n", lk->locked);
-#if MULTICORE  // multi-core features.
-	if (holding(lk)) panic("acquire");
+
+	if (holding(lk)) {
+		cprintf("acquire: something is wrong... %d\n", lk->locked);
+		panic("acquire");
+	}
 
 	while (xchg(&lk->locked, 1) != 0);
 
@@ -33,10 +35,7 @@ void acquire(struct spinlock *lk) {
 	// past this point, to ensure that the critical section's memory
 	// references happen after the lock is acquired.
 	dmb(); // __sync_synchronize() is deprecated.
-#else
 	// Record info about lock acquisition for debugging.
-	lk->locked = 1;
-#endif
 	lk->cpu = cpu;
 	getcallerpcs(get_fp(), lk->pcs);
 }
@@ -45,9 +44,13 @@ void acquire(struct spinlock *lk) {
 void release(struct spinlock *lk) {
 	uint tmp;
 
-	if (!holding(lk)) cprintf("release: something is wrong... %d\n", lk->locked);
-#if MULTICORE  // multi-core features.
-	if(!holding(lk)) panic("release");
+	if (!holding(lk)) {
+		cprintf("release: something is wrong... %d\n", lk->locked);
+		panic("release");
+	}
+
+	lk->pcs[0] = 0;
+	lk->cpu = 0;
 
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that all the stores in the critical
@@ -60,11 +63,6 @@ void release(struct spinlock *lk) {
 	// This code can't use a C assignment, since it might
 	// not be atomic. A real OS would use C atomics here.
 	lk->locked = 0; // 뭐 어쩔건데 걍 대입해...
-#else
-	lk->locked = 0;
-#endif
-	lk->pcs[0] = 0;
-	lk->cpu = 0;
 
 	popcli();
 }
@@ -107,34 +105,34 @@ void show_callstk(char *s) {
 
 // Check whether this cpu is holding the lock.
 int holding(struct spinlock *lock) {
+	int r;
+	pushcli();
 #if MULTICORE
-	return lock->locked && lock->cpu == cpus;
+	r = lock->locked && lock->cpu = cpu;
 #else
-	return lock->locked;
+	r = lock->locked;
 #endif
+	popcli();
+	return r;
 }
 
 void pushcli (void) {
-	int enabled;
-
-	enabled = is_int();
-
 	cli();
-
-	if (cpu->ncli++ == 0)
-		cpu->intena = enabled;
+	if (cpu->ncli == 0)
+		cpu->intena = is_int();
+	cpu->ncli += 1;
 }
 
-void popcli (void)
-{
-	if (is_int())
+void popcli (void) {
+	if (is_int()) {
 		panic("popcli - interruptible");
+	}
 
 	if (--cpu->ncli < 0) {
 		cprintf("cpu (%d)->ncli: %d\n", cpu, cpu->ncli);
 		panic("popcli -- ncli < 0");
 	}
 
-	if (!(cpu->ncli) && cpu->intena)
+	if (cpu->ncli == 0 && cpu->intena)
 		sti();
 }
