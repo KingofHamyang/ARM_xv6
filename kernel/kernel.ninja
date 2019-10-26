@@ -2,8 +2,8 @@ rule initcode_compile
   command = $cc $cflags  -nostdinc -nostdlib -Iinclude -c $in -o $out
 
 rule initcode_link
-  command = $ld $user_ldflags -e start $in -o $out -L $libgcc
- # --specs=nosys.specs
+  command = $ld $user_ldflags -e start $in -o $out -L $$(arm-none-eabi-gcc  -print-libgcc-file-name)
+
 rule initcode_objcopy
   command = $objcopy -S -O binary --prefix-symbols="_binary_$in" $in $out
 

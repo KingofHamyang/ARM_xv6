@@ -15,7 +15,6 @@ gdb = ${toolchain}gdb
 cflags = -std=c11 -march=armv7-a -mtune=cortex-a9 -nostdinc -nostdlib -mfloat-abi=soft -fno-pic -static -fno-builtin -fno-strict-aliasing -O0 -Wall -ggdb -Wno-unused -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
 asflags = -gdwarf-2 -Wa -I./include
 user_ldflags = -N -Ttext 0
-libgcc = /usr/lib/gcc/arm-none-eabi/9.2.0/libgcc.a
 ldflags = -N
 
 
@@ -54,7 +53,7 @@ include kernel/kernel.ninja
 
 build qemu: _qemu $builddir/kernel.elf | $builddir/kernel.asm
 build qemu-gdb: _qemu_gdb $builddir/kernel.elf | $builddir/kernel.asm
-  extra = -gdb tcp::12345 -S 
+  extra = -gdb tcp::12345 -S
 build gdb: _gdb $builddir/kernel.elf | $builddir/kernel.asm
 
 # You need to install graphviz to export build dependency graph.
