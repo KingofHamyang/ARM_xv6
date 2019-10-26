@@ -105,7 +105,7 @@ static uint spsr_usr() {
 	return val;
 }
 
-static inline int int_enabled() {
+static inline int is_int() {
 	uint val;
 
 	__asm__ __volatile__ (
