@@ -44,7 +44,7 @@ void kmain (void) {
 	ideinit ();					// ide (memory block device)
 	timer_init (HZ);			// the timer (ticker)
 
-	sti ();
+	// sti (); // ??? sheduler에서 이미 해주는데 왜 이런짓을??
 
 	userinit();					// first user process
 	scheduler();				// start running processes

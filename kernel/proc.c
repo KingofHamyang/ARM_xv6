@@ -364,7 +364,7 @@ void sched(void) {
 	if(proc->state == RUNNING)
 		panic("sched running");
 
-	if(int_enabled ())
+	if(is_int ())
 		panic("sched interruptible");
 
 	intena = cpu->intena;
