@@ -92,7 +92,6 @@ trap_reset:
 	# call traps (trapframe *fp)
 	MOV     r0, r13             // copy r13_svc to r0
 	BL      reset_handler
-	B       .
 
 trap_und:
 	STMFD   r13!, {r0-r12, r14} // lr: instruction after the undefined
@@ -105,7 +104,6 @@ trap_und:
 	# call traps (trapframe *fp)
 	MOV     r0, r13                 // save trapframe as the first parameter
 	BL      und_handler
-	B       .
 
 trap_iabort:
 	SUB     r14, r14, #4            // lr: instruction causing the abort
@@ -133,9 +131,6 @@ trap_dabort:
 	# call traps (trapframe *fp)
 	MOV     r0, r13                 // save trapframe as the first parameter
 	BL      dabort_handler
-	MOV     r0, #2                  // #SYS_exit
-	SWI     0x00
-	# B       exit
 	# B       .                       // trapret
 
 trap_na:
