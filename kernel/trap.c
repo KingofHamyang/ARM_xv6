@@ -127,7 +127,7 @@ void trap_init ()
   // Software interrupt 소프트웨어 인터럽트
   // Prefetch abort
   // Data abort
-  // Not assigned
+  // Reserved
   // IRQ
   // FIQ
 
@@ -136,7 +136,7 @@ void trap_init ()
 	ram_start[10] = (uint)trap_swi;
 	ram_start[11] = (uint)trap_iabort;
 	ram_start[12] = (uint)trap_dabort;
-	ram_start[13] = (uint)trap_na;
+	ram_start[13] = (uint)trap_resrved;
 	ram_start[14] = (uint)trap_irq;
 	ram_start[15] = (uint)trap_fiq;
 
