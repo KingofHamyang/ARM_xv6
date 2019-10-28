@@ -10,7 +10,7 @@
 .global trap_und
 .global trap_iabort
 .global trap_dabort
-.global trap_na
+.global trap_resrved
 .global trap_fiq
 .global trapret
 .global set_stk
@@ -133,7 +133,7 @@ trap_dabort:
 	BL      dabort_handler
 	# B       .                       // trapret
 
-trap_na:
+trap_resrved:
 	STMFD   r13!, {r0-r12, r14} // should never happen, hardware error
 	MRS     r2, spsr                // copy spsr to r2
 	STMFD   r13!, {r2}              // save r2(spsr) to the stack
