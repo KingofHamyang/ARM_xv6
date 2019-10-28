@@ -136,7 +136,7 @@ void trap_init ()
 	ram_start[10] = (uint)trap_swi;
 	ram_start[11] = (uint)trap_iabort;
 	ram_start[12] = (uint)trap_dabort;
-	ram_start[13] = (uint)trap_resrved;
+	ram_start[13] = (uint)trap_reserved;
 	ram_start[14] = (uint)trap_irq;
 	ram_start[15] = (uint)trap_fiq;
 
