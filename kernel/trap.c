@@ -118,14 +118,18 @@ void trap_init ()
 	// create the excpetion vectors
 	ram_start = (uint*)VEC_TBL;
 
-	ram_start[0] = LDR_PCPC | 0x18; // Reset (SVC)
-	ram_start[1] = LDR_PCPC | 0x18; // Undefine Instruction (UND)
-	ram_start[2] = LDR_PCPC | 0x18; // Software interrupt (SVC)
-	ram_start[3] = LDR_PCPC | 0x18; // Prefetch abort (ABT)
-	ram_start[4] = LDR_PCPC | 0x18; // Data abort (ABT)
-	ram_start[5] = LDR_PCPC | 0x18; // Not assigned (-)
-	ram_start[6] = LDR_PCPC | 0x18; // IRQ (IRQ)
-	ram_start[7] = LDR_PCPC | 0x18; // FIQ (FIQ)
+  for(int i = 0 ; i<8; i++){
+    ram_start[i] = LDR_PCPC | 0x18;
+    // Set Interrupt handler start address
+  }
+  // Reset (SVC)
+  // Undefine Instruction
+  // Software interrupt 소프트웨어 인터럽트
+  // Prefetch abort
+  // Data abort
+  // Not assigned
+  // IRQ
+  // FIQ
 
 	ram_start[8]  = (uint)trap_reset;
 	ram_start[9]  = (uint)trap_und;
