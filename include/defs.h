@@ -158,7 +158,7 @@ void            trap_und(void);
 void            trap_swi(void);
 void            trap_iabort(void);
 void            trap_dabort(void);
-void            trap_na(void);
+void            trap_reserved(void);
 void            trap_irq(void);
 void            trap_fiq(void);
 
