@@ -12,8 +12,7 @@
 // system call function. The saved user sp points to the first argument.
 
 // Fetch the int at addr from the current process.
-int fetchint(uint addr, int *ip)
-{
+int fetchint(uint addr, int *ip) {
 	if(addr >= proc->sz || addr+4 > proc->sz) {
 		return -1;
 	}
@@ -25,8 +24,7 @@ int fetchint(uint addr, int *ip)
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
-int fetchstr(uint addr, char **pp)
-{
+int fetchstr(uint addr, char **pp) {
 	char *s, *ep;
 
 	if(addr >= proc->sz) {
@@ -36,7 +34,7 @@ int fetchstr(uint addr, char **pp)
 	*pp = (char*)addr;
 	ep = (char*)proc->sz;
 
-	for(s = *pp; s < ep; s++) {
+	for (s = *pp; s < ep; s++) {
 		if(*s == 0) {
 			return s - *pp;
 		}
@@ -48,8 +46,7 @@ int fetchstr(uint addr, char **pp)
 // Fetch the nth (starting from 0) 32-bit system call argument.
 // In our ABI, r0 contains system call index, r1-r4 contain parameters.
 // now we support system calls with at most 4 parameters.
-int argint(int n, int *ip)
-{
+int argint(int n, int *ip) {
 	if (n > 3) {
 		panic ("too many system call parameters\n");
 	}
@@ -62,8 +59,7 @@ int argint(int n, int *ip)
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size n bytes.  Check that the pointer
 // lies within the process address space.
-int argptr(int n, char **pp, int size)
-{
+int argptr(int n, char **pp, int size) {
 	int i;
 
 	if(argint(n, &i) < 0) {
@@ -82,8 +78,7 @@ int argptr(int n, char **pp, int size)
 // Check that the pointer is valid and the string is nul-terminated.
 // (There is no shared writable memory, so the string can't change
 // between this check and being used by the kernel.)
-int argstr(int n, char **pp)
-{
+int argstr(int n, char **pp) {
 	int addr;
 
 	if(argint(n, &addr) < 0) {
@@ -139,8 +134,7 @@ static int (*syscalls[])(void) = {
 		[SYS_close]   sys_close,
 };
 
-void syscall(void)
-{
+void syscall(void) {
 	int num;
 	int ret;
 

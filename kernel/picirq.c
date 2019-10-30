@@ -36,14 +36,12 @@ static volatile uint* vic_base;
 
 static ISR isrs[NUM_INTSRC];
 
-static void default_isr (struct trapframe *tf, int n)
-{
+static void default_isr (struct trapframe *tf, int n) {
 	cprintf ("unhandled interrupt: %d\n", n);
 }
 
 // initialize the PL190 VIC
-void pic_init (void * base)
-{
+void pic_init (void * base) {
 	int i;
 
 	// set the base for the controller and disable all interrupts
@@ -56,8 +54,7 @@ void pic_init (void * base)
 }
 
 // enable an interrupt (with the ISR)
-void pic_enable (int n, ISR isr)
-{
+void pic_enable (int n, ISR isr) {
 	if ((n<0) || (n >= NUM_INTSRC)) {
 		panic ("invalid interrupt source");
 	}
@@ -68,8 +65,7 @@ void pic_enable (int n, ISR isr)
 }
 
 // disable an interrupt
-void pic_disable (int n)
-{
+void pic_disable (int n) {
 	if ((n<0) || (n >= NUM_INTSRC)) {
 		panic ("invalid interrupt source");
 	}
@@ -79,8 +75,7 @@ void pic_disable (int n)
 }
 
 // dispatch the interrupt
-void pic_dispatch (struct trapframe *tp)
-{
+void pic_dispatch (struct trapframe *tp) {
 	uint intstatus;
 	int		i;
 

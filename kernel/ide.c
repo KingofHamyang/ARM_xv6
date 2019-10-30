@@ -15,23 +15,20 @@ extern uchar _binary_fs_img_start[], _binary_fs_img_end[];
 static int disksize;
 static uchar *memdisk;
 
-void ideinit(void)
-{
+void ideinit(void) {
 	memdisk = _binary_fs_img_start;
 	disksize = (uint)(_binary_fs_img_end - _binary_fs_img_start)/512;
 }
 
 // Interrupt handler.
-void ideintr(void)
-{
+void ideintr(void) {
 	// no-op
 }
 
 // Sync buf with disk.
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
-void iderw(struct buf *b)
-{
+void iderw(struct buf *b) {
 	uchar *p;
 
 	if(!(b->flags & B_BUSY)) {
@@ -52,7 +49,7 @@ void iderw(struct buf *b)
 
 	p = memdisk + b->sector*512;
 
-	if(b->flags & B_DIRTY){
+	if(b->flags & B_DIRTY) {
 		b->flags &= ~B_DIRTY;
 		memmove(p, b->data, 512);
 	} else {
