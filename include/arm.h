@@ -50,11 +50,15 @@
 #define dmb() __asm__ __volatile__ ("dmb":::"memory")
 
 // Some gcc ignore inline; so force inline it.
-static inline uint strex(volatile uint *, uint) __attribute__((always_inline));
+static inline void cli(void) __attribute__((always_inline));
+static inline void sti(void) __attribute__((always_inline));
+static inline uint spsr_usr() __attribute__((always_inline));
+static inline int is_int() __attribute__((always_inline));
 static inline uint ldrex(volatile uint *) __attribute__((always_inline));
+static inline uint strex(volatile uint *, uint) __attribute__((always_inline));
 static inline uint xchg(volatile uint *, uint) __attribute__((always_inline));
 
-static void cli(void) {
+static inline void cli(void) {
 	uint val;
 
 	__asm__ __volatile__ (
@@ -72,7 +76,7 @@ static void cli(void) {
 	);
 }
 
-static void sti(void) {
+static inline void sti(void) {
 	uint val;
 
 	__asm__ __volatile__ (
@@ -90,7 +94,7 @@ static void sti(void) {
 	);
 }
 
-static uint spsr_usr() {
+static inline uint spsr_usr() {
 	uint val;
 
 	__asm__ __volatile__ (
