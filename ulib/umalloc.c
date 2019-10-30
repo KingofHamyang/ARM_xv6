@@ -22,8 +22,7 @@ static Header base;
 static Header *freep;
 
 void
-free(void *ap)
-{
+free(void *ap) {
 	Header *bp, *p;
 
 	bp = (Header*)ap - 1;
@@ -44,8 +43,7 @@ free(void *ap)
 }
 
 static Header*
-morecore(uint nu)
-{
+morecore(uint nu) {
 	char *p;
 	Header *hp;
 
@@ -61,8 +59,7 @@ morecore(uint nu)
 }
 
 void*
-malloc(uint nbytes)
-{
+malloc(uint nbytes) {
 	Header *p, *prevp;
 	uint nunits;
 

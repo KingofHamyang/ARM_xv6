@@ -5,8 +5,7 @@
 char buf[512];
 
 void
-wc(int fd, char *name)
-{
+wc(int fd, char *name) {
 	int i, n;
 	int l, w, c, inword;
 
@@ -33,8 +32,7 @@ wc(int fd, char *name)
 }
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 	int fd, i;
 
 	if (argc <= 1) {

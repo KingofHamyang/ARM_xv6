@@ -8,8 +8,7 @@
 #include "arm.h"
 
 // load a user program for execution
-int exec (char *path, char **argv)
-{
+int exec (char *path, char **argv) {
 	struct elfhdr elf;
 	struct inode *ip;
 	struct proghdr ph;

@@ -3,14 +3,12 @@
 #include "user.h"
 
 static void
-putc(int fd, char c)
-{
+putc(int fd, char c) {
 	write(fd, &c, 1);
 }
 
 static void
-printint(int fd, int xx, int base, int sgn)
-{
+printint(int fd, int xx, int base, int sgn) {
 	static char digits[] = "0123456789ABCDEF";
 	char buf[16];
 	int i, neg;
@@ -37,8 +35,7 @@ printint(int fd, int xx, int base, int sgn)
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
 void
-printf(int fd, char *fmt, ...)
-{
+printf(int fd, char *fmt, ...) {
 	char *s;
 	int c, i, state;
 	uint *ap;

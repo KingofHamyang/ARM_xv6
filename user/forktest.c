@@ -7,13 +7,11 @@
 
 #define N 1000
 
-void wprintf(int fd, const char *s, ...)
-{
+void wprintf(int fd, const char *s, ...) {
 	write(fd, (char *)s, strlen((char *)s));
 }
 
-void forktest(void)
-{
+void forktest(void) {
 	int n, pid;
 
 	wprintf(1, "fork test\n");
@@ -51,8 +49,7 @@ void forktest(void)
 	wprintf(1, "fork test OK\n");
 }
 
-int main(void)
-{
+int main(void) {
 	forktest();
 	exit();
 }

@@ -6,24 +6,20 @@
 #include "mmu.h"
 #include "proc.h"
 
-int sys_fork(void)
-{
+int sys_fork(void) {
 	return fork();
 }
 
-int sys_exit(void)
-{
+int sys_exit(void) {
 	exit();
 	return 0;  // not reached
 }
 
-int sys_wait(void)
-{
+int sys_wait(void) {
 	return wait();
 }
 
-int sys_kill(void)
-{
+int sys_kill(void) {
 	int pid;
 
 	if(argint(0, &pid) < 0) {
@@ -33,13 +29,11 @@ int sys_kill(void)
 	return kill(pid);
 }
 
-int sys_getpid(void)
-{
+int sys_getpid(void) {
 	return proc->pid;
 }
 
-int sys_sbrk(void)
-{
+int sys_sbrk(void) {
 	int addr;
 	int n;
 
@@ -56,8 +50,7 @@ int sys_sbrk(void)
 	return addr;
 }
 
-int sys_sleep(void)
-{
+int sys_sleep(void) {
 	int n;
 	uint ticks0;
 
@@ -69,8 +62,8 @@ int sys_sleep(void)
 
 	ticks0 = ticks;
 
-	while(ticks - ticks0 < n){
-		if(proc->killed){
+	while(ticks - ticks0 < n) {
+		if(proc->killed) {
 			release(&tickslock);
 			return -1;
 		}
@@ -84,8 +77,7 @@ int sys_sleep(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-int sys_uptime(void)
-{
+int sys_uptime(void) {
 	uint xticks;
 
 	acquire(&tickslock);

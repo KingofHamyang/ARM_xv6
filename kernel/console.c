@@ -22,8 +22,7 @@ static struct {
 	int locking;
 } cons;
 
-static void printint(int xx, int base, int sign)
-{
+static void printint(int xx, int base, int sign) {
 	static char digits[] = "0123456789ABCDEF";
 	char buf[16];
 	int i;
@@ -47,8 +46,7 @@ static void printint(int xx, int base, int sign)
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
-void cprintf (char *fmt, ...)
-{
+void cprintf (char *fmt, ...) {
 	int i, c, locking;
 	uint *argp;
 	char *s;
@@ -106,8 +104,7 @@ void cprintf (char *fmt, ...)
 	if (locking) release(&cons.lock);
 }
 
-void panic(char *s)
-{
+void panic(char *s) {
 	cli();
 
 	cons.locking = 0;
@@ -123,8 +120,7 @@ void panic(char *s)
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
 
-void consputc (int c)
-{
+void consputc (int c) {
 	if (panicked) {
 		cli();
 		for (;;);
@@ -149,8 +145,7 @@ struct {
 } input;
 
 #define C(x)  ((x)-'@')  // Control-x
-void consoleintr (int (*getc) (void))
-{
+void consoleintr (int (*getc) (void)) {
 	int c;
 
 	acquire(&input.lock);
@@ -198,8 +193,7 @@ void consoleintr (int (*getc) (void))
 	release(&input.lock);
 }
 
-int consoleread (struct inode *ip, char *dst, int n)
-{
+int consoleread (struct inode *ip, char *dst, int n) {
 	uint target;
 	int c;
 
@@ -245,8 +239,7 @@ int consoleread (struct inode *ip, char *dst, int n)
 	return target - n;
 }
 
-int consolewrite (struct inode *ip, char *buf, int n)
-{
+int consolewrite (struct inode *ip, char *buf, int n) {
 	int i;
 
 	iunlock(ip);

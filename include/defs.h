@@ -21,7 +21,7 @@ typedef void (*ISR) (struct trapframe *, int);
 
 // bootasm.S
 void            set_stk(uint, uint);
-void*           get_fp (void);
+void*           get_fp(void);
 
 // bio.c
 void            binit(void);
@@ -30,14 +30,14 @@ void            brelse(struct buf *);
 void            bwrite(struct buf *);
 
 // buddy.c
-void            kmem_init (void);
+void            kmem_init(void);
 void            kmem_init2(void *, void *);
-void *          kmalloc (int);
-void            kfree (void *, int);
+void *          kmalloc(int);
+void            kfree(void *, int);
 void            free_page(void *);
-void *          alloc_page (void);
-void            kmem_test_b (void);
-int             get_order (uint);
+void *          alloc_page(void);
+void            kmem_test_b(void);
+int             get_order(uint);
 
 // console.c
 void            consoleinit(void);
@@ -89,7 +89,7 @@ void            commit_trans();
 // picirq.c
 void            pic_enable(int, ISR);
 void            pic_init(void *);
-void            pic_dispatch (struct trapframe *);
+void            pic_dispatch(struct trapframe *);
 
 // pipe.c
 int             pipealloc(struct file **, struct file **);
@@ -150,7 +150,7 @@ extern struct   spinlock tickslock;
 // trap.c
 extern uint     ticks;
 void            trap_init(void);
-void            dump_trapframe (struct trapframe *);
+void            dump_tf(struct trapframe *);
 
 // trap_asm.S
 void            trap_reset(void);
@@ -180,8 +180,8 @@ void            switchuvm(struct proc*);
 int             copyout(pde_t *, uint, void *, uint);
 void            clearpteu(pde_t *, char *);
 void *          kpt_alloc(void);
-void            init_vmm (void);
-void            kpt_freerange (uint, uint);
-void            paging_init (uint, uint);
+void            init_vmm(void);
+void            kpt_freerange(uint, uint);
+void            paging_init(uint, uint);
 
 #endif

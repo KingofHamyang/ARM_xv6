@@ -4,8 +4,7 @@
 #include "fs.h"
 
 char*
-fmtname(char *path)
-{
+fmtname(char *path) {
     static char buf[DIRSIZ+1];
     char *p;
     
@@ -23,8 +22,7 @@ fmtname(char *path)
 }
 
 void
-ls(char *path)
-{
+ls(char *path) {
     char buf[512], *p;
     int fd;
     struct dirent de;
@@ -71,8 +69,7 @@ ls(char *path)
 }
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
     int i;
     
     if (argc < 2) {

@@ -46,33 +46,27 @@ struct kmem {
 static struct kmem kmem;
 
 // coversion between block id to mark and memory address
-static inline struct mark* get_mark (int order, int idx)
-{
+static inline struct mark* get_mark (int order, int idx) {
 	return (struct mark*)kmem.start + (kmem.orders[order - MIN_ORD].offset + idx);
 }
 
-static inline void* blkid2mem (int order, int blkid)
-{
+static inline void* blkid2mem (int order, int blkid) {
 	return (void*)(kmem.start_heap + (1 << order) * blkid);
 }
 
-static inline int mem2blkid (int order, void *mem)
-{
+static inline int mem2blkid (int order, void *mem) {
 	return ((uint)mem - kmem.start_heap) >> order;
 }
 
-static inline int available (uint bitmap, int blk_id)
-{
+static inline int available (uint bitmap, int blk_id) {
 	return bitmap & (1 << (blk_id & 0x1F));
 }
 
-void kmem_init (void)
-{
+void kmem_init (void) {
 	initlock(&kmem.lock, "kmem");
 }
 
-void kmem_init2(void *vstart, void *vend)
-{
+void kmem_init2(void *vstart, void *vend) {
 	int             i, j;
 	uint          total, n;
 	uint            len;
@@ -106,14 +100,13 @@ void kmem_init2(void *vstart, void *vend)
 	// add all available memory to the highest order bucket
 	kmem.start_heap = ALIGNUP(kmem.start + total * sizeof(*mk), 1 << MAX_ORD);
 
-	for (i = kmem.start_heap; i < kmem.end; i += (1 << MAX_ORD)){
+	for (i = kmem.start_heap; i < kmem.end; i += (1 << MAX_ORD)) {
 		kfree ((void*)i, MAX_ORD);
 	}
 }
 
 // mark a block as unavailable
-static void unmark_blk (int order, int blk_id)
-{
+static void unmark_blk (int order, int blk_id) {
 	struct mark     *mk, *p;
 	struct order    *ord;
 	int             prev, next;
@@ -154,8 +147,7 @@ static void unmark_blk (int order, int blk_id)
 }
 
 // mark a block as available
-static void mark_blk (int order, int blk_id)
-{
+static void mark_blk (int order, int blk_id) {
 	struct mark     *mk, *p;
 	struct order    *ord;
 	int             insert;
@@ -189,8 +181,7 @@ static void mark_blk (int order, int blk_id)
 }
 
 // get a block
-static void* get_blk (int order)
-{
+static void* get_blk (int order) {
 	struct mark *mk;
 	int blk_id;
 	int i;
@@ -218,8 +209,7 @@ static void* get_blk (int order)
 void _kfree (void *mem, int order);
 
 
-static void *_kmalloc (int order)
-{
+static void *_kmalloc (int order) {
 	struct order *ord;
 	uchar         *up;
 
@@ -229,7 +219,7 @@ static void *_kmalloc (int order)
 	if (ord->head != NIL) {
 		up = get_blk(order);
 
-	} else if (order < MAX_ORD){
+	} else if (order < MAX_ORD) {
 		// if currently no block available, try to split a parent
 		up = _kmalloc (order + 1);
 
@@ -242,8 +232,7 @@ static void *_kmalloc (int order)
 }
 
 // allocate memory that has the size of (1 << order)
-void *kmalloc (int order)
-{
+void *kmalloc (int order) {
 	uchar         *up;
 
 	if ((order > MAX_ORD) || (order < MIN_ORD)) {
@@ -257,8 +246,7 @@ void *kmalloc (int order)
 	return up;
 }
 
-void _kfree (void *mem, int order)
-{
+void _kfree (void *mem, int order) {
 	int blk_id, buddy_id;
 	struct mark *mk;
 
@@ -282,8 +270,7 @@ void _kfree (void *mem, int order)
 
 // free kernel memory, we require order parameter here to avoid
 // storing size info somewhere which might break the alignment
-void kfree (void *mem, int order)
-{
+void kfree (void *mem, int order) {
 	if ((order > MAX_ORD) || (order < MIN_ORD) || (uint)mem & ((1<<order) -1)) {
 		panic("kfree: order out of range or memory unaligned\n");
 	}
@@ -294,21 +281,18 @@ void kfree (void *mem, int order)
 }
 
 // free a page
-void free_page(void *v)
-{
+void free_page(void *v) {
 	kfree (v, PTE_SHIFT);
 }
 
 // allocate a page
-void* alloc_page (void)
-{
+void* alloc_page (void) {
 	return kmalloc (PTE_SHIFT);
 }
 
 // round up power of 2, then get the order
 //   http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-int get_order (uint v)
-{
+int get_order (uint v) {
 	uint ord;
 
 	v--;
