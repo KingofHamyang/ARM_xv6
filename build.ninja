@@ -3,7 +3,7 @@ builddir = out
 
 toolchain = arm-none-eabi-
 qemu = qemu-system-arm
-qemuopts = -M versatilepb -m 256 -cpu cortex-a9 -nographic
+qemuopts = -M versatilepb -m 128 -cpu cortex-a9 -nographic
 
 cc = ${toolchain}gcc
 as = ${toolchain}as
@@ -12,15 +12,20 @@ objcopy = ${toolchain}objcopy
 objdump = ${toolchain}objdump
 gdb = ${toolchain}gdb
 
-cflags = -std=c11 -march=armv7-a -mtune=cortex-a9 -nostdinc -nostdlib -mfloat-abi=soft -fno-pic -static -fno-builtin -fno-strict-aliasing -O0 -Wall -ggdb -Wno-unused -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
+cflags = -std=c11 -march=armv7-a -mtune=cortex-a9 -nostdinc -nostdlib -mfloat-abi=soft -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -ggdb -Wno-unused -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
+c_opts = -Os
+c_useropts = -O0
 asflags = -gdwarf-2 -Wa -I./include
 user_ldflags = -N -Ttext 0
 libgcc = $$($cc -print-libgcc-file-name)
 ldflags = -N
 
 
+rule c_usercompile
+  command = $cc $cflags $c_useropts -c $in -o $out
+
 rule c_compile
-  command = $cc $cflags -c $in -o $out
+  command = $cc $cflags $c_opts -c $in -o $out
 
 rule as_compile
   command = $cc $cflags -c $in -o $out

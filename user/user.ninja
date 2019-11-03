@@ -11,23 +11,23 @@ rule mkfs_img
   command = cd out && ../tools/mkfs $out _cat _echo _forktest _grep _init _kill _ln _ls _mkdir _rm _sh _stressfs _usertests _wc _zombie && cd .. && $objdump -S $builddir/usys.o > $builddir/usys.asm
 
 # If you want to add your user program, add line like this.
-# build $builddir/[your_program].o: c_compile user/[your_program].c
+# build $builddir/[your_program].o: c_usercompile user/[your_program].c
 # build $builddir/_[your_program]: user_link $builddir/[your_program].o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
-build $builddir/cat.o: c_compile user/cat.c
-build $builddir/echo.o: c_compile user/echo.c
-build $builddir/forktest.o: c_compile user/forktest.c
-build $builddir/grep.o: c_compile user/grep.c
-build $builddir/init.o: c_compile user/init.c
-build $builddir/kill.o: c_compile user/kill.c
-build $builddir/ln.o: c_compile user/ln.c
-build $builddir/ls.o: c_compile user/ls.c
-build $builddir/mkdir.o: c_compile user/mkdir.c
-build $builddir/rm.o: c_compile user/rm.c
-build $builddir/sh.o: c_compile user/sh.c
-build $builddir/stressfs.o: c_compile user/stressfs.c
-build $builddir/usertests.o: c_compile user/usertests.c
-build $builddir/wc.o: c_compile user/wc.c
-build $builddir/zombie.o: c_compile user/zombie.c
+build $builddir/cat.o: c_usercompile user/cat.c
+build $builddir/echo.o: c_usercompile user/echo.c
+build $builddir/forktest.o: c_usercompile user/forktest.c
+build $builddir/grep.o: c_usercompile user/grep.c
+build $builddir/init.o: c_usercompile user/init.c
+build $builddir/kill.o: c_usercompile user/kill.c
+build $builddir/ln.o: c_usercompile user/ln.c
+build $builddir/ls.o: c_usercompile user/ls.c
+build $builddir/mkdir.o: c_usercompile user/mkdir.c
+build $builddir/rm.o: c_usercompile user/rm.c
+build $builddir/sh.o: c_usercompile user/sh.c
+build $builddir/stressfs.o: c_usercompile user/stressfs.c
+build $builddir/usertests.o: c_usercompile user/usertests.c
+build $builddir/wc.o: c_usercompile user/wc.c
+build $builddir/zombie.o: c_usercompile user/zombie.c
 build $builddir/_cat: user_link $builddir/cat.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 build $builddir/_echo: user_link $builddir/echo.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
 build $builddir/_forktest: forktest_link $builddir/forktest.o | $builddir/ulib.o $builddir/usys.o $builddir/printf.o $builddir/umalloc.o
