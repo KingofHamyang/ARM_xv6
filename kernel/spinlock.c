@@ -34,7 +34,7 @@ void acquire(struct spinlock *lk) {
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that the critical section's memory
 	// references happen after the lock is acquired.
-	dmb(); // __sync_synchronize() is deprecated.
+	DMB(); // __sync_synchronize() is deprecated.
 	// Record info about lock acquisition for debugging.
 	lk->cpu = cpu;
 	getcallerpcs(get_fp(), lk->pcs);
@@ -57,7 +57,7 @@ void release(struct spinlock *lk) {
 	// section are visible to other cores before the lock is released.
 	// Both the C compiler and the hardware may re-order loads and
 	// stores; __sync_synchronize() tells them both not to.
-	dmb(); // __sync_synchronize() is deprecated.
+	DMB(); // __sync_synchronize() is deprecated.
 
 	// Release the lock, equivalent to lk->locked = 0.
 	// This code can't use a C assignment, since it might

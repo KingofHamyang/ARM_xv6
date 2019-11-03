@@ -29,6 +29,23 @@ void und_handler (struct trapframe *r) {
 	panic("undefined instruction exception\n");
 }
 
+__attribute__((always_inline))
+static inline void _abort_reason(uint fault_status) {
+	if ((fault_status & 0xd) == 0x1)       // Alignment failure
+		cprintf("reason: alignment\n");
+	else if ((fault_status & 0xd) == 0x5)  // External abort "on translation"
+		cprintf("reason: ext. abort on trnslt.\n");
+	else if ((fault_status & 0xd) == 0x5)  // Translation
+		cprintf("reason: sect. translation\n");
+	else if ((fault_status & 0xd) == 0x9)  // Domain
+		cprintf("reason: sect. domain\n");
+	else if ((fault_status & 0xd) == 0xd)  // Permission
+		cprintf("reason: sect. permission\n");
+	else if ((fault_status & 0xd) == 0x8)  // External abort
+		cprintf("reason: ext. abort\n");
+	else cprintf("reason: unknown???\n");
+}
+
 void dabort_handler (struct trapframe *r) {
 	uint dfs, dfa;
 
@@ -37,7 +54,8 @@ void dabort_handler (struct trapframe *r) {
 
 	cli();
 	cprintf("data abort at 0x%x, status 0x%x\n",
-			r->pc, dfa, dfs);
+			dfa, dfs);
+	_abort_reason(dfs);
 	dump_tf(r);
 	if (r->pc < KERNBASE) // Exception occured in User space: exit
 		exit();
@@ -54,6 +72,7 @@ void iabort_handler (struct trapframe *r) {
 	cli();
 	cprintf("prefetch abort at 0x%x, status 0x%x\n",
 			ifa, ifs);
+	_abort_reason(ifs);
 	dump_tf(r);
 	if (r->pc < KERNBASE) // Exception occured in User space: exit
 		exit();
@@ -100,8 +119,7 @@ void trap_init () {
 
 	// initialize the stacks for different mode
 	for (i = 0; i < sizeof(modes) / sizeof(uint); i++) {
-		stk = alloc_page();
-		if (stk == NULL)
+		if (!(stk = kalloc()))
 			panic("irq stack allocation failed");
 		set_stk(modes[i], (uint)stk);
 	}

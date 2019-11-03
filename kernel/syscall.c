@@ -13,7 +13,7 @@
 
 // Fetch the int at addr from the current process.
 int fetchint(uint addr, int *ip) {
-	if(addr >= proc->sz || addr+4 > proc->sz) {
+	if (addr >= proc->sz || addr+4 > proc->sz) {
 		return -1;
 	}
 
@@ -27,7 +27,7 @@ int fetchint(uint addr, int *ip) {
 int fetchstr(uint addr, char **pp) {
 	char *s, *ep;
 
-	if(addr >= proc->sz) {
+	if (addr >= proc->sz) {
 		return -1;
 	}
 
@@ -35,7 +35,7 @@ int fetchstr(uint addr, char **pp) {
 	ep = (char*)proc->sz;
 
 	for (s = *pp; s < ep; s++) {
-		if(*s == 0) {
+		if (*s == 0) {
 			return s - *pp;
 		}
 	}
@@ -62,11 +62,11 @@ int argint(int n, int *ip) {
 int argptr(int n, char **pp, int size) {
 	int i;
 
-	if(argint(n, &i) < 0) {
+	if (argint(n, &i) < 0) {
 		return -1;
 	}
 
-	if((uint)i >= proc->sz || (uint)i+size > proc->sz) {
+	if ((uint)i >= proc->sz || (uint)i+size > proc->sz) {
 		return -1;
 	}
 
@@ -81,7 +81,7 @@ int argptr(int n, char **pp, int size) {
 int argstr(int n, char **pp) {
 	int addr;
 
-	if(argint(n, &addr) < 0) {
+	if (argint(n, &addr) < 0) {
 		return -1;
 	}
 
@@ -142,7 +142,7 @@ void syscall(void) {
 
 	//cprintf ("syscall(%d) from %s(%d)\n", num, proc->name, proc->pid);
 
-	if((num > 0) && (num <= NELEM(syscalls)) && syscalls[num]) {
+	if ((num > 0) && (num <= NELEM(syscalls)) && syscalls[num]) {
 		ret = syscalls[num]();
 
 		// in ARM, parameters to main (argc, argv) are passed in r0 and r1

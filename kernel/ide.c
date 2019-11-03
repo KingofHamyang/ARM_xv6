@@ -31,25 +31,25 @@ void ideintr(void) {
 void iderw(struct buf *b) {
 	uchar *p;
 
-	if(!(b->flags & B_BUSY)) {
+	if (!(b->flags & B_BUSY)) {
 		panic("iderw: buf not busy");
 	}
 
-	if((b->flags & (B_VALID|B_DIRTY)) == B_VALID) {
+	if ((b->flags & (B_VALID|B_DIRTY)) == B_VALID) {
 		panic("iderw: nothing to do");
 	}
 
-	if(b->dev != 1) {
+	if (b->dev != 1) {
 		panic("iderw: request not for disk 1");
 	}
 
-	if(b->sector >= disksize) {
+	if (b->sector >= disksize) {
 		panic("iderw: sector out of range");
 	}
 
 	p = memdisk + b->sector*512;
 
-	if(b->flags & B_DIRTY) {
+	if (b->flags & B_DIRTY) {
 		b->flags &= ~B_DIRTY;
 		memmove(p, b->data, 512);
 	} else {

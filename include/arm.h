@@ -47,17 +47,9 @@
 #ifndef __ASSEMBLER__
 #include "memlayout.h"
 
-#define dmb() __asm__ __volatile__ ("dmb":::"memory")
+#define DMB() __asm__ __volatile__ ("dmb":::"memory")
 
-// Some gcc ignore inline; so force inline it.
-static inline void cli(void) __attribute__((always_inline));
-static inline void sti(void) __attribute__((always_inline));
-static inline uint spsr_usr() __attribute__((always_inline));
-static inline int is_int() __attribute__((always_inline));
-static inline uint ldrex(volatile uint *) __attribute__((always_inline));
-static inline uint strex(volatile uint *, uint) __attribute__((always_inline));
-static inline uint xchg(volatile uint *, uint) __attribute__((always_inline));
-
+__attribute__((always_inline))
 static inline void cli(void) {
 	uint val;
 
@@ -76,6 +68,7 @@ static inline void cli(void) {
 	);
 }
 
+__attribute__((always_inline))
 static inline void sti(void) {
 	uint val;
 
@@ -94,6 +87,7 @@ static inline void sti(void) {
 	);
 }
 
+__attribute__((always_inline))
 static inline uint spsr_usr() {
 	uint val;
 
@@ -109,6 +103,7 @@ static inline uint spsr_usr() {
 	return val;
 }
 
+__attribute__((always_inline))
 static inline int is_int() {
 	uint val;
 
@@ -122,6 +117,17 @@ static inline int is_int() {
 	return !(val & DIS_INT);
 }
 
+__attribute__((always_inline))
+static inline void flush_tlb(void) {
+	uint val = 0;
+	__asm__ __volatile__ ("mcr p15, 0, %0, c8, c7, 0" : : "r"(val):);
+
+	// invalid entire data and instruction cache
+	__asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 0": : "r"(val):);
+	__asm__ __volatile__ ("mcr p15, 0, %0, c7, c11, 0": : "r"(val):);
+}
+
+__attribute__((always_inline))
 static inline uint ldrex(volatile uint *addr) {
 	// Load link.
 	uint res;
@@ -135,6 +141,7 @@ static inline uint ldrex(volatile uint *addr) {
 	return res;
 }
 
+__attribute__((always_inline))
 static inline uint strex(volatile uint *addr, uint newval) {
 	// Load link.
 	uint res;
@@ -148,6 +155,7 @@ static inline uint strex(volatile uint *addr, uint newval) {
 	return res;
 }
 
+__attribute__((always_inline))
 static inline uint xchg(volatile uint *addr, uint newval) {
 	// reference:
 	// https://github.com/torvalds/linux/blob/master/arch/arm/include/asm/atomic.h
