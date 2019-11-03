@@ -22,3 +22,4 @@ a.out
 .vscode/
 out/
 tools/mkfs
+.gdb_history
