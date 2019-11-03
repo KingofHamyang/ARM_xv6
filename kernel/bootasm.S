@@ -2,7 +2,6 @@
 #include "memlayout.h"
 
 .global _start
-.global jump_stack
 
 _start:
 	ldr r1, =boot_start_addr
@@ -19,12 +18,4 @@ _start:
 
 	bl bootmain
 	b .
-
-jump_stack:
-/*
-	mov r0, sp
-	add r0, r0, #KERNBASE
-	mov sp, r0
-*/
-	add sp, sp, #KERNBASE
-	mov pc, lr
+	

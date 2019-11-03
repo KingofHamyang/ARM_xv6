@@ -26,10 +26,19 @@ SECTIONS
 		out/bootasm.o(.bss .bss.* COMMON)
 		out/bootmain.o(.bss .bss.* COMMON)
 
+		/* DEVBASE Coarse Page Tables (num: 2, 0x400 unit) */
+		. = ALIGN(0x400);
+		PROVIDE(_dev_pte = .);
+		. += 0x800;
+
+		/* DRAM Coarse Page Tables (num: 128, 0x400 unit) */
+		. = ALIGN(0x400);
+		PROVIDE(_pte = .);
+		. += 0x20000;
+
 		/* stack for booting code. */
 		. = ALIGN(0x1000);
 		. += BOOT_STACK_SIZE;
-
 		PROVIDE(svc_stack = .);
 
 		/* Kernel page table. 16K */
@@ -37,25 +46,24 @@ SECTIONS
 		PROVIDE(_kt = .);
 		. += 0x4000;
 
-		/* User page table. 4K */
+		/* User page table. 16K */
 		PROVIDE(_ut = .);
-		. += 0x1000;
+		. += 0x4000;
 
 		/* initialization end checkpoint. */
 		PROVIDE(boot_end_addr = .);
 	}
 
 	/* Other Kernel code is placed over 0x80000000 + 128KB. */
-	. = 0x80020000;
-	.text : AT(0x20000) {
+	. = 0x80040000;
+	.text : AT(0x40000) {
 		*(.text .text.* .gnu.linkonce.t.*)
 	}
 
-	/* Other Kernel code text checkpoint. */
-	PROVIDE(kern_text = .);
 
 	. = ALIGN(0x1000);
-	PROVIDE(kern_data_start = .);
+	/* Other Kernel code text checkpoint. */
+	PROVIDE(kern_text = .);
 
 	.data : {
 		*(.data .data.*)
@@ -67,7 +75,7 @@ SECTIONS
 		PROVIDE(_binary_fs_img_end = .);
 	}
 
-	PROVIDE(kern_data_end = .);
+	PROVIDE(kern_data = .);
 
 	.bss : {
 		*(.bss .bss.* COMMON)

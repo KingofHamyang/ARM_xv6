@@ -16,28 +16,17 @@ struct trapframe;
 
 typedef uint pte_t;
 typedef uint pde_t;
-extern  uint _kt;
+extern uint *dev_pte;
+extern uint *pte;
+extern uint *kt;
+extern uint *ut;
 typedef void (*ISR) (struct trapframe *, int);
-
-// bootasm.S
-void            set_stk(uint, uint);
-void*           get_fp(void);
 
 // bio.c
 void            binit(void);
 struct buf *    bread(uint, uint);
 void            brelse(struct buf *);
 void            bwrite(struct buf *);
-
-// buddy.c
-void            kmem_init(void);
-void            kmem_init2(void *, void *);
-void *          kmalloc(int);
-void            kfree(void *, int);
-void            free_page(void *);
-void *          alloc_page(void);
-void            kmem_test_b(void);
-int             get_order(uint);
 
 // console.c
 void            consoleinit(void);
@@ -80,11 +69,22 @@ int             writei(struct inode *, char *, uint, uint);
 void            ideinit(void);
 void            iderw(struct buf *);
 
+// kalloc.c
+char *          kalloc(void);
+void            kfree(char *);
+void            kinit1(void *, void *);
+void            kinit2(void *, void *);
+void            freerange(void *, void *);
+
 // log.c
 void            initlog(void);
 void            log_write(struct buf *);
 void            begin_trans();
 void            commit_trans();
+
+// mp.c
+//extern int      ismp;
+//void            mpinit(void);
 
 // picirq.c
 void            pic_enable(int, ISR);
@@ -98,11 +98,13 @@ int             piperead(struct pipe *, char *, int);
 int             pipewrite(struct pipe *, char *, int);
 
 // proc.c
-struct proc *   copyproc(struct proc *);
+//int             cpuid(void);
 void            exit(void);
 int             fork(void);
 int             growproc(int);
 int             kill(int);
+//struct cpu *    mycpu(void);
+//struct proc *   myproc(void);
 void            pinit(void);
 void            procdump(void);
 void            scheduler(void) __attribute__((noreturn));
@@ -125,6 +127,12 @@ void            initlock(struct spinlock *, char *);
 void            release(struct spinlock *);
 void            pushcli(void);
 void            popcli(void);
+
+// sleeplock.c
+//void            acquiresleep(struct sleeplock *);
+//void            releasesleep(struct sleeplock *);
+//int             holdingsleep(struct sleeplock *);
+//void            initsleeplock(struct sleeplock *, char *);
 
 // string.c
 int             memcmp(const void *, const void *, uint);
@@ -151,8 +159,10 @@ extern struct   spinlock tickslock;
 extern uint     ticks;
 void            trap_init(void);
 void            dump_tf(struct trapframe *);
+void            set_stk(uint, uint);
+void*           get_fp(void);
 
-// trap_asm.S
+// trapasm.S
 void            trap_reset(void);
 void            trap_und(void);
 void            trap_swi(void);
@@ -167,9 +177,11 @@ void            uart_init(void *);
 void            uartputc(int);
 int             uartgetc(void);
 void            micro_delay(int);
-void            uart_enable_rx();
+void            uart_enable_rx(void);
 
 // vm.c
+void            kvmalloc(void);
+char*           uva2ka(pde_t*, char*);
 int             allocuvm(pde_t *, uint, uint);
 int             deallocuvm(pde_t *, uint, uint);
 void            freevm(pde_t *);
@@ -179,9 +191,5 @@ pde_t *         copyuvm(pde_t *, uint);
 void            switchuvm(struct proc*);
 int             copyout(pde_t *, uint, void *, uint);
 void            clearpteu(pde_t *, char *);
-void *          kpt_alloc(void);
-void            init_vmm(void);
-void            kpt_freerange(uint, uint);
-void            paging_init(uint, uint);
 
 #endif
