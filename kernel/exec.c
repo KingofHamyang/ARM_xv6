@@ -29,6 +29,8 @@ int exec (char *path, char **argv) {
 
 	ilock(ip);
 
+	pgdir = 0;
+
 	// Check ELF header
 	if (readi(ip, (char*) &elf, 0, sizeof(elf)) < sizeof(elf)) {
 		goto bad;
@@ -38,9 +40,7 @@ int exec (char *path, char **argv) {
 		goto bad;
 	}
 
-	pgdir = 0;
-
-	if ((pgdir = kpt_alloc()) == 0) {
+	if ((pgdir = setupkvm()) == 0) {
 		goto bad;
 	}
 

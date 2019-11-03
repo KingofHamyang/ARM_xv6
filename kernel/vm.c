@@ -8,73 +8,16 @@
 #include "spinlock.h"
 #include "elf.h"
 
-extern char data[];  // defined by kernel.ld
+extern uint kern_text;  // defined by kernel.ld
+extern uint kern_data;  // defined by kernel.ld
+extern uint kern_end;   // defined by kernel.ld
+
 pde_t *kpgdir;  // for use in scheduler()
-
-// Xv6 can only allocate memory in 4KB blocks. This is fine
-// for x86. ARM's page table and page directory (for 28-bit
-// user address) have a size of 1KB. kpt_alloc/free is used
-// as a wrapper to support allocating page tables during boot
-// (use the initial kernel map, and during runtime, use buddy
-// memory allocator.
-struct run {
-	struct run *next;
+struct trans {
+	uint page_i : 12;
+	uint pt_i : 8;
+	uint pd_i : 12;
 };
-
-struct {
-	struct spinlock lock;
-	struct run *freelist;
-} kpt_mem;
-
-void init_vmm(void) {
-	initlock(&kpt_mem.lock, "vm");
-	kpt_mem.freelist = NULL;
-}
-
-static void _kpt_free(char *v) {
-	struct run *r;
-
-	r = (struct run *) v;
-	r->next = kpt_mem.freelist;
-	kpt_mem.freelist = r;
-}
-
-static void kpt_free(char *v) {
-	if (v >= (char *)P2V(INIT_KERNMAP)) {
-		kfree(v, PT_ORDER);
-		return;
-	}
-
-	acquire(&kpt_mem.lock);
-	_kpt_free(v);
-	release(&kpt_mem.lock);
-}
-
-// add some memory used for page tables (initialization code)
-void kpt_freerange(uint low, uint hi) {
-	while (low < hi) {
-		_kpt_free((char *)low);
-		low += PT_SZ;
-	}
-}
-
-void* kpt_alloc(void) {
-	struct run *r;
-
-	acquire(&kpt_mem.lock);
-
-	if ((r = kpt_mem.freelist) != NULL )
-		kpt_mem.freelist = r->next;
-
-	release(&kpt_mem.lock);
-
-	// Allocate a PT page if no inital pages is available
-	if (!r && !(r = kmalloc(PT_ORDER)))
-		panic("out of memory: kpt_alloc");
-
-	memset(r, 0, PT_SZ);
-	return (char *)r;
-}
 
 // Return the address of the PTE in page directory that corresponds to
 // virtual address va.  If alloc!=0, create any required page table pages.
@@ -85,19 +28,19 @@ static pte_t* walkpgdir(pde_t *pgdir, const void *va, int alloc) {
 	// pgdir points to the page directory, get the page direcotry entry (pde)
 	pde = &pgdir[PDE_IDX(va)];
 
-	if (*pde & PE_TYPES)
-		pgtab = (pte_t*) p2v(PT_ADDR(*pde));
+	if (*pde & PDE_TYPES)
+		pgtab = (pte_t *)p2v(PTE_ADDR(*pde));
 	else {
-		if (!alloc || !(pgtab = (pte_t*) kpt_alloc()))
+		if (!alloc || !(pgtab = (pte_t *)setupkvm()))
 			return 0;
 
 		// Make sure all those PTE_P bits are zero.
-		memset(pgtab, 0, PT_SZ);
+		memset(pgtab, 0, PGSIZE);
 
 		// The permissions here are overly generous, but they can
 		// be further restricted by the permissions in the page table
 		// entries, if necessary.
-		*pde = v2p(pgtab) | UPDE_TYPE;
+		*pde = v2p(pgtab) | PDE_COARSE;
 	}
 
 	return &pgtab[PTE_IDX(va)];
@@ -117,9 +60,9 @@ static int mappages(pde_t *pgdir, void *va, uint size, uint pa, int ap) {
 		if ((pte = walkpgdir(pgdir, a, 1)) == 0)
 			return -1;
 
-		if (*pte & PE_TYPES) panic("remap");
+		if (*pte & PTE_TYPES) panic("remap");
 
-		*pte = pa | ((ap & 0x3) << 4) | PE_CACHE | PE_BUF | PTE_TYPE;
+		*pte = pa | ((ap & 0x3) << 4) | PTE_CACHE | PTE_BUF | PTE_SMALL;
 
 		if (a == last) break;
 
@@ -130,30 +73,47 @@ static int mappages(pde_t *pgdir, void *va, uint size, uint pa, int ap) {
 	return 0;
 }
 
-// flush all TLB
-static inline void flush_tlb(void) __attribute__((always_inline));
-static inline void flush_tlb(void) {
-	uint val = 0;
-	__asm__ __volatile__ ("mcr p15, 0, %0, c8, c7, 0" : : "r"(val):);
-
-	// invalid entire data and instruction cache
-	__asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 0": : "r"(val):);
-	__asm__ __volatile__ ("mcr p15, 0, %0, c7, c11, 0": : "r"(val):);
+void kvmalloc(void) {
+	kpgdir = kt;
 }
+
+/*
+// We don't need switchkvm because of dual TTBRs.
+// Switch to the kernel page table (TTBR1)
+void switchkvm(void) {
+
+	//switch page table
+	__asm__ __volatile__ ("mcr p15, 0, %0, c2, c0, 1": : "r"(v2p(kpgdir)):);
+
+	// Invalidate TLB
+	asm volatile("ldr r2, =0");
+	asm volatile("MCR p15, 0, r2, c8, c5, 0");  //Invalidate unlocked Inst TLB entries
+	asm volatile("MCR p15, 0, r2, c8, c5, 1");  //Invalidate unlocked Data TLB entries
+
+	// invalidate Instruction Cache (p.3-70)
+	asm volatile("ldr r2, =0");
+	asm volatile("MCR p15, 0, r2, c7, c5, 0");  //Invalidate Entire Instruction Cache
+	asm volatile("MCR p15, 0, r2, c7, c6, 0");  //Invalidate Entire Data Cache
+	asm volatile("MCR p15, 0, r2, c7, c5, 4");  //Flush Instruction Buffer
+	asm volatile("MCR p15, 0, r2, c7, c10, 0"); //Clean Entire Data Cache
+}
+*/
 
 // Switch to the user page table (TTBR0)
 void switchuvm(struct proc *p) {
 	uint val;
 
-	pushcli();
-
-	if (p->pgdir == 0)
+	if (!p)
+		panic("switchuvm: no process");
+	if (!p->kstack)
+		panic("switchuvm: no kstack");
+	if (!p->pgdir)
 		panic("switchuvm: no pgdir");
 
+	pushcli();
+
 	val = (uint) V2P(p->pgdir) | 0x00;
-
 	__asm__ __volatile__ ("mcr p15, 0, %0, c2, c0, 0": : "r"(val):);
-
 	flush_tlb();
 
 	popcli();
@@ -166,7 +126,7 @@ void inituvm(pde_t *pgdir, char *init, uint sz) {
 	if (sz >= PTE_SZ)
 		panic("inituvm: more than a page");
 
-	mem = alloc_page();
+	mem = kalloc();
 	memset(mem, 0, PTE_SZ);
 	mappages(pgdir, 0, PTE_SZ, v2p(mem), AP_KU);
 	memmove(mem, init, sz);
@@ -220,7 +180,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
 	a = ALIGNUP(oldsz, PTE_SZ);
 
 	for (; a < newsz; a += PTE_SZ) {
-		mem = alloc_page();
+		mem = kalloc();
 
 		if (mem == 0) {
 			cprintf("allocuvm out of memory\n");
@@ -256,14 +216,14 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
 			// round it up to the next page directory
 			a = ALIGNUP (a, PDE_SZ);
 
-		} else if ((*pte & PE_TYPES) != 0) {
+		} else if ((*pte & PTE_TYPES) != 0) {
 			pa = PTE_ADDR(*pte);
 
 			if (pa == 0) {
 				panic("deallocuvm");
 			}
 
-			free_page(p2v(pa));
+			kfree(p2v(pa));
 			*pte = 0;
 		}
 	}
@@ -277,22 +237,21 @@ void freevm(pde_t *pgdir) {
 	uint i;
 	char *v;
 
-	if (pgdir == 0) {
+	if (pgdir == 0)
 		panic("freevm: no pgdir");
-	}
 
 	// release the user space memroy, but not page tables
 	deallocuvm(pgdir, UADDR_SZ, 0);
 
 	// release the page tables
 	for (i = 0; i < NUM_UPDE; i++) {
-		if (pgdir[i] & PE_TYPES) {
-			v = p2v(PT_ADDR(pgdir[i]));
-			kpt_free(v);
+		if (pgdir[i] & PDE_TYPES) {
+			v = p2v(PTE_ADDR(pgdir[i]));
+			kfree(v);
 		}
 	}
 
-	kpt_free((char*) pgdir);
+	kfree((char *)pgdir);
 }
 
 // Clear PTE_U on a page. Used to create an inaccessible page beneath
@@ -318,10 +277,8 @@ pde_t* copyuvm(pde_t *pgdir, uint sz) {
 	char *mem;
 
 	// allocate a new first level page directory
-	d = kpt_alloc();
-	if (d == NULL ) {
-		return NULL ;
-	}
+	if (!(d = setupkvm()))
+		return NULL;
 
 	// copy the whole address space over (no COW)
 	for (i = 0; i < sz; i += PTE_SZ) {
@@ -329,14 +286,14 @@ pde_t* copyuvm(pde_t *pgdir, uint sz) {
 			panic("copyuvm: pte should exist");
 		}
 
-		if (!(*pte & PE_TYPES)) {
+		if (!(*pte & PTE_TYPES)) {
 			panic("copyuvm: page not present");
 		}
 
 		pa = PTE_ADDR (*pte);
 		ap = PTE_AP (*pte);
 
-		if ((mem = alloc_page()) == 0) {
+		if ((mem = kalloc()) == 0) {
 			goto bad;
 		}
 
@@ -360,7 +317,7 @@ char* uva2ka(pde_t *pgdir, char *uva) {
 	pte = walkpgdir(pgdir, uva, 0);
 
 	// make sure it exists
-	if ((*pte & PE_TYPES) == 0)
+	if ((*pte & PTE_TYPES) == 0)
 		return 0;
 
 	// make sure it is a user page
@@ -397,16 +354,4 @@ int copyout(pde_t *pgdir, uint va, void *p, uint len) {
 	}
 
 	return 0;
-}
-
-
-// 1:1 map the memory [phy_low, phy_hi] in kernel. We need to
-// use 2-level mapping for this block of memory. The rumor has
-// it that ARMv6's small brain cannot handle the case that memory
-// be mapped in both 1-level page table and 2-level page. For
-// initial kernel, we use 1MB mapping, other memory needs to be
-// mapped as 4KB pages
-void paging_init(uint phy_low, uint phy_hi) {
-	mappages(P2V(&_kt), P2V(phy_low), phy_hi - phy_low, phy_low, AP_KU);
-	flush_tlb();
 }
