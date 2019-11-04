@@ -107,7 +107,6 @@ void error_init () {
 	panic ("failed to craft first process\n");
 }
 
-
 // hand-craft the first user process. We link initcode.S into the kernel
 // as a binary, the linker will generate __binary_initcode_start/_size
 void userinit(void) {
@@ -117,9 +116,8 @@ void userinit(void) {
 	p = allocproc();
 	initproc = p;
 
-	if ((p->pgdir = setupkvm()) == NULL) {
+	if (!(p->pgdir = setupvm()))
 		panic("userinit: out of memory?");
-	}
 
 	inituvm(p->pgdir, _binary_initcode_start, (int)(_binary_initcode_end - _binary_initcode_start));
 
@@ -129,7 +127,7 @@ void userinit(void) {
 	memset(p->tf, 0, sizeof(*p->tf));
 
 	p->tf->r14_svc = (uint)error_init;
-	p->tf->spsr = spsr_usr ();
+	p->tf->spsr = spsr_usr(); 
 	p->tf->sp_usr = PTE_SZ;	// set the user stack
 	p->tf->lr_usr = 0;
 
@@ -221,9 +219,8 @@ void exit(void) {
 	struct proc *p;
 	int fd;
 
-	if (proc == initproc) {
+	if (proc == initproc)
 		panic("init exiting");
-	}
 
 	// Close all open files.
 	for (fd = 0; fd < NOFILE; fd++) {
@@ -232,9 +229,9 @@ void exit(void) {
 			proc->ofile[fd] = 0;
 		}
 	}
-	begin_trans();
+	// begin_trans();
 	iput(proc->cwd);
-	commit_trans();
+	// commit_trans();
 
 	proc->cwd = 0;
 
@@ -248,9 +245,8 @@ void exit(void) {
 		if (p->parent == proc) {
 			p->parent = initproc;
 
-			if (p->state == ZOMBIE) {
+			if (p->state == ZOMBIE)
 				wakeup1(initproc);
-			}
 		}
 	}
 
@@ -273,9 +269,8 @@ int wait(void) {
 		havekids = 0;
 
 		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-			if (p->parent != proc) {
+			if (p->parent != proc)
 				continue;
-			}
 
 			havekids = 1;
 
@@ -324,9 +319,8 @@ void scheduler(void) {
 		acquire(&ptable.lock);
 
 		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-			if (p->state != RUNNABLE) {
+			if (p->state != RUNNABLE)
 				continue;
-			}
 
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
@@ -341,7 +335,6 @@ void scheduler(void) {
 			// It should have changed its p->state before coming back.
 			proc = 0;
 		}
-
 		release(&ptable.lock);
 	}
 }
@@ -372,7 +365,7 @@ void sched(void) {
 
 // Give up the CPU for one scheduling round.
 void yield(void) {
-	acquire(&ptable.lock);  //DOC: yieldlock
+	acquire(&ptable.lock);
 	proc->state = RUNNABLE;
 	sched();
 	release(&ptable.lock);

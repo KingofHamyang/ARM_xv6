@@ -13,7 +13,7 @@ objdump = ${toolchain}objdump
 gdb = ${toolchain}gdb
 
 cflags = -std=c11 -march=armv7-a -mtune=cortex-a9 -nostdinc -nostdlib -mfloat-abi=soft -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -ggdb -Wno-unused -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -I./include
-c_opts = -Os
+c_opts = -O0
 c_useropts = -O0
 asflags = -gdwarf-2 -Wa -I./include
 user_ldflags = -N -Ttext 0

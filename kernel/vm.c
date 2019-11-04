@@ -11,14 +11,30 @@
 extern uint kern_text;  // defined by kernel.ld
 extern uint kern_data;  // defined by kernel.ld
 extern uint kern_end;   // defined by kernel.ld
-
-pde_t *kpgdir;  // for use in scheduler()
-struct trans {
+/*
+typedef struct {
 	uint page_i : 12;
 	uint pt_i : 8;
 	uint pd_i : 12;
-};
-
+} virt;
+typedef struct {
+	uint t_type : 2;
+	uint t_resv : 3;
+	uint t_dom : 4;
+	uint t_unk : 1;
+	uint t_base : 22;
+} pde_s;
+typedef struct {
+	uint p_type : 2;
+	uint p_buf : 1;
+	uint p_cache : 1;
+	uint p_ap : 2;
+	uint p_tex : 3;
+	uint p_apx : 1;
+	uint p_resv : 2;
+	uint p_base : 20;
+} pte_s;
+*/
 // Return the address of the PTE in page directory that corresponds to
 // virtual address va.  If alloc!=0, create any required page table pages.
 static pte_t* walkpgdir(pde_t *pgdir, const void *va, int alloc) {
@@ -31,7 +47,7 @@ static pte_t* walkpgdir(pde_t *pgdir, const void *va, int alloc) {
 	if (*pde & PDE_TYPES)
 		pgtab = (pte_t *)p2v(PTE_ADDR(*pde));
 	else {
-		if (!alloc || !(pgtab = (pte_t *)setupkvm()))
+		if (!alloc || !(pgtab = (pte_t *)setupvm()))
 			return 0;
 
 		// Make sure all those PTE_P bits are zero.
@@ -73,31 +89,14 @@ static int mappages(pde_t *pgdir, void *va, uint size, uint pa, int ap) {
 	return 0;
 }
 
-void kvmalloc(void) {
-	kpgdir = kt;
+pde_t *setupvm(void) {
+	pde_t *pgdir;
+
+	if (!(pgdir = (pde_t *)kalloc()))
+		return 0;
+
+	return pgdir;
 }
-
-/*
-// We don't need switchkvm because of dual TTBRs.
-// Switch to the kernel page table (TTBR1)
-void switchkvm(void) {
-
-	//switch page table
-	__asm__ __volatile__ ("mcr p15, 0, %0, c2, c0, 1": : "r"(v2p(kpgdir)):);
-
-	// Invalidate TLB
-	asm volatile("ldr r2, =0");
-	asm volatile("MCR p15, 0, r2, c8, c5, 0");  //Invalidate unlocked Inst TLB entries
-	asm volatile("MCR p15, 0, r2, c8, c5, 1");  //Invalidate unlocked Data TLB entries
-
-	// invalidate Instruction Cache (p.3-70)
-	asm volatile("ldr r2, =0");
-	asm volatile("MCR p15, 0, r2, c7, c5, 0");  //Invalidate Entire Instruction Cache
-	asm volatile("MCR p15, 0, r2, c7, c6, 0");  //Invalidate Entire Data Cache
-	asm volatile("MCR p15, 0, r2, c7, c5, 4");  //Flush Instruction Buffer
-	asm volatile("MCR p15, 0, r2, c7, c10, 0"); //Clean Entire Data Cache
-}
-*/
 
 // Switch to the user page table (TTBR0)
 void switchuvm(struct proc *p) {
@@ -112,7 +111,7 @@ void switchuvm(struct proc *p) {
 
 	pushcli();
 
-	val = (uint) V2P(p->pgdir) | 0x00;
+	val = (uint)V2P(p->pgdir) | 0x00;
 	__asm__ __volatile__ ("mcr p15, 0, %0, c2, c0, 0": : "r"(val):);
 	flush_tlb();
 
@@ -169,13 +168,11 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
 	char *mem;
 	uint a;
 
-	if (newsz >= UADDR_SZ) {
+	if (newsz >= UADDR_SZ)
 		return 0;
-	}
 
-	if (newsz < oldsz) {
+	if (newsz < oldsz)
 		return oldsz;
-	}
 
 	a = ALIGNUP(oldsz, PTE_SZ);
 
@@ -277,7 +274,7 @@ pde_t* copyuvm(pde_t *pgdir, uint sz) {
 	char *mem;
 
 	// allocate a new first level page directory
-	if (!(d = setupkvm()))
+	if (!(d = setupvm()))
 		return NULL;
 
 	// copy the whole address space over (no COW)

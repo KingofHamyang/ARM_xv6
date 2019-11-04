@@ -23,28 +23,22 @@ struct {
 	struct run *freelist;
 } kmem;
 
-// Initialization happens in two phases.
-// 1. main() calls kinit1() while still using entrypgdir to place just
-// the pages mapped by entrypgdir on free list.
-// 2. main() calls kinit2() with the rest of the physical pages
-// after installing a full page table that maps them on all cores.
-void kinit1(void *vstart, void *vend) {
+void kinit1() {
 	initlock(&kmem.lock, "kmem");
 	kmem.use_lock = 0;
-	freerange(vstart, vend);
 }
 
-void kinit2(void *vstart, void *vend) {
-	freerange(vstart, vend);
+void kinit2() {
 	kmem.use_lock = 1;
 }
 
 void freerange(void *vstart, void *vend) {
 	char *p;
-	p = (char *)ALIGNUP((uint)vstart, PGSIZE);
-	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
+	p = (char *)ALIGNUP((uint)vstart, 4 * PGSIZE);
+	for (; p +  4 * PGSIZE <= (char *)vend; p += 4 * PGSIZE)
 		kfree(p);
 }
+
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
 // which normally should have been returned by a
@@ -53,7 +47,7 @@ void freerange(void *vstart, void *vend) {
 void kfree(char *v) {
 	struct run *r;
 
-	if ((uint)v % PGSIZE)
+	if ((uint)v % (4 * PGSIZE))
 		panic("kfree - unaligned");
 	if (v < kern_end)
 		panic("kfree - under kern_end");
@@ -61,7 +55,7 @@ void kfree(char *v) {
 		panic("kfree - over PHYSTOP");
 
 	// Fill with junk to catch dangling refs.
-	memset(v, 1, PGSIZE);
+	memset(v, 0, 4 * PGSIZE);
 
 	if (kmem.use_lock)
 		acquire(&kmem.lock);
@@ -74,7 +68,7 @@ void kfree(char *v) {
 		release(&kmem.lock);
 }
 
-// Allocate one 4096-byte page of physical memory.
+// Allocate one 16KB page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 char * kalloc(void) {

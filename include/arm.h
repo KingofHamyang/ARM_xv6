@@ -97,6 +97,7 @@ static inline uint spsr_usr() {
 			:
 			:
 	);
+	val &= ~DIS_INT;
 	val &= ~MODE_MASK;
 	val |= USR_MODE;
 

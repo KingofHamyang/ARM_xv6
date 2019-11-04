@@ -33,6 +33,8 @@ void            consoleinit(void);
 void            cprintf(char *, ...);
 void            consoleintr(int(*)(void));
 void            panic(char *) __attribute__((noreturn));
+void            clock(void);
+void            cunlock(void);
 
 // exec.c
 int             exec(char *, char **);
@@ -72,8 +74,8 @@ void            iderw(struct buf *);
 // kalloc.c
 char *          kalloc(void);
 void            kfree(char *);
-void            kinit1(void *, void *);
-void            kinit2(void *, void *);
+void            kinit1();
+void            kinit2();
 void            freerange(void *, void *);
 
 // log.c
@@ -180,7 +182,7 @@ void            micro_delay(int);
 void            uart_enable_rx(void);
 
 // vm.c
-void            kvmalloc(void);
+pde_t *         setupvm(void);
 char*           uva2ka(pde_t*, char*);
 int             allocuvm(pde_t *, uint, uint);
 int             deallocuvm(pde_t *, uint, uint);

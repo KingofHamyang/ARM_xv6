@@ -53,6 +53,7 @@ void dabort_handler (struct trapframe *r) {
 	__asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 0": "=r"(dfa)::);
 
 	cli();
+	cprintf("program counter: 0x%x caused\n", r->pc);
 	cprintf("data abort at 0x%x, status 0x%x\n",
 			dfa, dfs);
 	_abort_reason(dfs);
@@ -70,6 +71,7 @@ void iabort_handler (struct trapframe *r) {
 	__asm__ __volatile__ ("mrc p15, 0, %0, c6, c0, 2": "=r"(ifa)::);
 
 	cli();
+	cprintf("program counter: 0x%x caused\n", r->pc);
 	cprintf("prefetch abort at 0x%x, status 0x%x\n",
 			ifa, ifs);
 	_abort_reason(ifs);

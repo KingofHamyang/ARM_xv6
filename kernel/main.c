@@ -20,11 +20,10 @@ void kmain (void) {
 	uart_init(P2V(UART0));
 	cprintf("paging enabled.\n");
 
-	kinit1(kern_end, P2V(INIT_KERNMAP));   // phys page allocator
+	kinit1();   // phys page allocator
+	freerange(kern_end, P2V(PHYSTOP));
+
 	trap_init();				// vector table and stacks for models
-	kvmalloc();                 // kernel page table
-
-
 	pic_init(P2V(VIC_BASE));	// interrupt controller
 	uart_enable_rx();			// interrupt for uart
 	consoleinit();				// console
@@ -35,8 +34,7 @@ void kmain (void) {
 	ideinit();					// ide (memory block device)
 	timer_init(HZ);			// the timer (ticker)
 
-	kinit2(P2V(INIT_KERNMAP), P2V(PHYSTOP));
-	cprintf("kinit2 done.\n");
+	kinit2();
 
 	userinit();					// first user process
 	scheduler();				// start running processes
