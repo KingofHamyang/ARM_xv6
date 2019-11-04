@@ -25,7 +25,6 @@ void acquire(struct spinlock *lk) {
 	pushcli(); // disable interrupts to avoid deadlock.
 
 	if (holding(lk)) {
-		cprintf("acquire: something is wrong... %d\n", lk->locked);
 		panic("acquire");
 	}
 
@@ -45,7 +44,6 @@ void release(struct spinlock *lk) {
 	uint tmp;
 
 	if (!holding(lk)) {
-		cprintf("release: something is wrong... %d\n", lk->locked);
 		panic("release");
 	}
 

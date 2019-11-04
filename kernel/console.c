@@ -46,18 +46,16 @@ static void printint(int xx, int base, int sign) {
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
-void cprintf (char *fmt, ...) {
-	int i, c, locking;
+void cprintf(char *fmt, ...) {
+	int i, c;
 	uint *argp;
 	char *s;
 
-	locking = cons.locking;
+	if (cons.locking) acquire(&cons.lock);
 
-	if (locking) acquire(&cons.lock);
+	if (fmt == 0) panic("null fmt");
 
-	if (fmt == 0)  panic("null fmt");
-
-	argp = (uint*) (void*) (&fmt + 1);
+	argp = (uint *) (void *) (&fmt + 1);
 
 	for (i = 0; (c = fmt[i] & 0xff) != 0; i++) {
 		if (c != '%') {
@@ -101,8 +99,11 @@ void cprintf (char *fmt, ...) {
 		}
 	}
 
-	if (locking) release(&cons.lock);
+	if (cons.locking) release(&cons.lock);
 }
+
+void clock() { cons.locking = 1; }
+void cunlock() { cons.locking = 0; }
 
 void panic(char *s) {
 	cli();
@@ -264,6 +265,5 @@ void consoleinit (void) {
 	devsw[CONSOLE].write = consolewrite;
 	devsw[CONSOLE].read = consoleread;
 
-	cons.locking = 1;
+	clock();
 }
-

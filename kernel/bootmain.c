@@ -36,13 +36,13 @@ static void build_pages() {
 	// First, connect "Coarse PTE ~ 4K pages" (0x1000)
 	// PHYSTOP is 128MB = 0x0800_0000.
 	// DRAM page area is bufferable and cacheable.
-	for (i = 0; i < 0x8000; i++)
-		pte[i] = (i<<12) | PTE_BUF | PTE_CACHE | PTE_PA | PTE_SMALL;
+	for (i = 0; i < (PHYSTOP >> PTE_SHIFT); i++)
+		pte[i] = (i << PTE_SHIFT) | PTE_BUF | PTE_CACHE | PTE_PA | PTE_SMALL;
 
 	// Second, connect "_kt & _ut ~ Coarse PTEs" for DRAM.
 	// PT unit: 0x400 = 1KB
-	for (i = 0; i < 0x80; i++) {
-		pde = (uint)(&pte[i<<8]) | PDE_COARSE;
+	for (i = 0; i < (PHYSTOP >> PDE_SHIFT); i++) {
+		pde = (uint)(&pte[i << 8]) | PDE_COARSE;
 
 		// set_bootpgtbl(0, 0, INIT_KERNMAP, 0);
 		ut[i] = pde;
@@ -51,7 +51,7 @@ static void build_pages() {
 	}
 
 	// set_bootpgtbl(VEC_TBL, 0, 1 << PDE_SHIFT, 0);
-	kt[VEC_TBL>>20] = (uint)pte | PDE_COARSE;
+	kt[(VEC_TBL >> PDE_SHIFT)] = (uint)pte | PDE_COARSE;
 
 	// Lastly, connect DEVBASE.
     // set_bootpgtbl(KERNBASE+DEVBASE, DEVBASE, DEV_MEM_SZ, 1);
