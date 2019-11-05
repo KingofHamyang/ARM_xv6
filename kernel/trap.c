@@ -89,14 +89,12 @@ void reserved_handler (struct trapframe *r) {
 }
 
 void fiq_handler (struct trapframe *r) {
-	// Unfortunately, fiq handler is not implemented.
 	cli();
 	cprintf ("fiq at: 0x%x \n", r->pc);
-	panic("fiq exception - fiq not implemented, sorry!");
+	panic("fiq exception");
 }
 
-// low-level init code: in real hardware, lower memory is usually mapped
-// to flash during startup, we need to remap it to SDRAM
+// low-level init code: place trap vector table at 0xFFFF0000
 void trap_init () {
 	volatile uint *ex_table;
 	char *stk;

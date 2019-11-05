@@ -1,4 +1,3 @@
-//low-level trap handler glue code
 #include "arm.h"
 
 .text
@@ -17,9 +16,8 @@
 .global get_fp
 
 
-# handle SWI, we allow nested SWI
+# SWI handler : ret addr = lr
 trap_swi:
-	# build trapframe on the stack
 	stmfd   sp!, {r0-r12, r14}  // save context
 	mrs     r2, spsr            // copy spsr to r2
 	stmfd   r13!, {r2}          // save r2(spsr) to the stack
@@ -41,13 +39,10 @@ trapret:
 	ldmfd   r13!,{r0-r12, pc}^  // restore context and return
 
 
-# handle IRQ, we allow nested IRQs
+# IRQ handler : ret addr = lr - 4 
 trap_irq:
-	# save a few registers to the irq stack to provide scratch regs.
-	# r14 (lr_irq) contains the instruction (pc) to return to, need to
-	# save it on the stack as r14 is banked
 	sub     r14, r14, #4            // r14 (lr) contains the interrupted PC
-	stmfd   r13!, {r0-r2, r14}      //
+	stmfd   r13!, {r0-r2, r14}      // save context
 	mrs     r1, spsr                // save spsr_irq
 	mov     r0, r13                 // save stack stop (r13_irq)
 	add     r13, r13, #16           // reset the IRQ stack
@@ -58,8 +53,7 @@ trap_irq:
 	orr     r2, r2, #SVC_MODE
 	msr     cpsr_cxsf, r2
 
-	# now, in SVC mode, sp, lr, pc (r13, r14, r15) are all banked
-	# build the trap frame
+	# now, in SVC mode, sp, lr, pc (r13, r14, r15) are all banked. So, build trapframe
 	ldr     r2, [r0, #12]           // read the r14_irq, then save it
 	stmfd   r13!, {r2}
 	stmfd   r13!, {r3-r12}          // r4-r12 are preserved (non-banked)
@@ -78,10 +72,9 @@ trap_irq:
 	# restore the previous status
 	b   trapret
 
-# handle reset/undefine instruction/abort/not-assigned/fiq
-# these handler does not allow nested handling
+# reset handling : ret addr = undefined
 trap_reset:
-	mov     r14, #0                 // lr: not defined on reset
+	mov     r14, #0             // lr : undefined on reset
 	stmfd   r13!, {r0-r12, r14}
 	mrs     r2, spsr            // copy spsr to r2
 	stmfd   r13!, {r2}          // save r2(spsr) to the stack
@@ -93,8 +86,9 @@ trap_reset:
 	mov     r0, r13             // copy r13_svc to r0
 	bl      reset_handler
 
+# und handler : ret addr = lr
 trap_und:
-	stmfd   r13!, {r0-r12, r14} // lr: instruction after the undefined
+	stmfd   r13!, {r0-r12, r14}     // lr : undefined instruction is discard
 	mrs     r2, spsr                // copy spsr to r2
 	stmfd   r13!, {r2}              // save r2(spsr) to the stack
 	stmfd   r13!, {r14}             // save r14 again (it is not really correct)
@@ -105,8 +99,9 @@ trap_und:
 	mov     r0, r13                 // save trapframe as the first parameter
 	bl      und_handler
 
+# iabort(prefetch) handler : ret addr = lr - 4
 trap_iabort:
-	sub     r14, r14, #4            // lr: instruction causing the abort
+	sub     r14, r14, #4            // lr: go back to instruction causing the abort
 	stmfd   r13!, {r0-r12, r14}
 	mrs     r2, spsr                // copy spsr to r2
 	stmfd   r13!, {r2}              // save r2(spsr) to the stack
@@ -118,8 +113,9 @@ trap_iabort:
 	mov     r0, r13                 // save trapframe as the first parameter
 	bl      iabort_handler
 
+# dabort handler : ret addr = lr - 8
 trap_dabort:
-	sub     r14, r14, #8            // lr: instruction causing the abort
+	sub     r14, r14, #8            // lr: go back to instruction causing the abort(2 instruction due to pipelining)
 	stmfd   r13!, {r0-r12, r14}
 	mrs     r2, spsr                // copy spsr to r2
 	stmfd   r13!, {r2}              // save r2(spsr) to the stack
@@ -131,8 +127,9 @@ trap_dabort:
 	mov     r0, r13                 // save trapframe as the first parameter
 	bl      dabort_handler
 
+# reserved handler : ret addr = n/a
 trap_reserved:
-	stmfd   r13!, {r0-r12, r14} // should never happen, hardware error
+	stmfd   r13!, {r0-r12, r14} 	// should never happen, hardware error
 	mrs     r2, spsr                // copy spsr to r2
 	stmfd   r13!, {r2}              // save r2(spsr) to the stack
 	stmfd   r13!, {r14}             // save r14 again (it is not really correct)
@@ -143,8 +140,9 @@ trap_reserved:
 	mov     r0, r13                 // save trapframe as the first parameter
 	bl      reserved_handler
 
+# fiq handler : ret addr = lr - 4
 trap_fiq:
-	sub     r14, r14, #4            // lr: return address after the fiq handler
+	sub     r14, r14, #4            // lr: same with irq
 	stmfd   r13!, {r0-r12, r14}
 	mrs     r2, spsr                // copy spsr to r2
 	stmfd   r13!, {r2}              // save r2(spsr) to the stack
